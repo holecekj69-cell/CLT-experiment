@@ -1,5 +1,3 @@
-// Adresa webové aplikace z Apps Scriptu (Nasadit → Spravovat nasazení → URL končící /exec).
-// Dokud je prázdná, web ukazuje jen uložený snímek a nejde odškrtávat.
 window.CLT_CONFIG = {
-  api: ""
+  api: "https://script.google.com/macros/s/AKfycbzVGCDoGbvJIQGjS3pCHxH05KiyyKDsB8TPnjnZPUkKB6rP59p6iMUl-0Hw4MGu8NkORw/exec"
 };
