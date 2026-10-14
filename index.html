@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0B2335"><style>[hidden]{display:none!important}body{margin:0}</style><script src="config.js"></script><title>CLT REFRESH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: field-ops board — header with key facts, sticky filter bar, day sections with a 7:00–18:30 track, bottom sheet for detail */
+:root {
+  --bg: #F1F5F6;
+  --surface: #FFFFFF;
+  --ink: #1B2730;
+  --muted: #56656F;
+  --line: #D3DDE1;
+  --grid: #E4EBEE;
+  --accent: #1F4D68;
+  --accent-ink: #FFFFFF;
+  --ember: #C2566A;
+  --brand-navy: #0B2335;
+  --brand-blue: #1F4D68;
+  --brand-cyan: #56B6DD;
+  --brand-teal: #79C7B7;
+  --brand-pink: #D07E8D;
+  --brand-dark: #3C3C3C;
+  --dusk: rgba(27, 34, 38, 0.07);
+  --dim: 0.22;
+  --shadow: 0 8px 28px rgba(20, 28, 32, 0.16);
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --label-w: 230px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1A22; --surface: #15242E; --ink: #E6EEF1; --muted: #9AAEB8; --line: #2A3D49; --grid: #1F313C;
+    --accent: #79C7B7; --accent-ink: #0B2335; --ember: #E28E9C; --dusk: rgba(0, 0, 0, 0.30); --dim: 0.28;
+    --shadow: 0 8px 28px rgba(0, 0, 0, 0.5); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1A22; --surface: #15242E; --ink: #E6EEF1; --muted: #9AAEB8; --line: #2A3D49; --grid: #1F313C;
+  --accent: #79C7B7; --accent-ink: #0B2335; --ember: #E28E9C; --dusk: rgba(0, 0, 0, 0.30); --dim: 0.28;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.5); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 120px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+.top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 32px; align-items: end; padding: 22px 22px 20px; color: #FFFFFF;
+  background:
+    radial-gradient(ellipse 45% 90% at 8% 0%, rgba(86, 182, 221, 0.55), transparent 70%),
+    radial-gradient(ellipse 40% 80% at 100% 100%, rgba(208, 126, 141, 0.55), transparent 70%),
+    linear-gradient(135deg, var(--brand-blue), var(--brand-navy) 60%); }
+.top .eyebrow { color: rgba(255, 255, 255, 0.92); }
+.top .meta { color: #FFFFFF; font-weight: 500; }
+.top .lead { color: #FFFFFF; }
+h1 .b-clt { color: #FFFFFF; }
+h1 .b-re { color: #FFFFFF; }
+h1 .b-fresh { color: var(--brand-teal); }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; letter-spacing: 0.01em; }
+.meta { color: var(--muted); margin-top: 6px; }
+.lead { margin-top: 4px; font-weight: 600; }
+.start { display: grid; gap: 2px; padding: 10px 14px; border-left: 4px solid var(--brand-teal); background: rgba(11, 35, 53, 0.78); }
+.start b { font-family: var(--f-display); font-size: 28px; line-height: 1; font-weight: 700; color: var(--brand-teal); }
+.start span { font-size: 13px; color: #E8E4E4; }
+
+/* controls */
+.bar-ctl { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.row .lbl { flex: 0 0 100%; font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); min-width: 52px; }
+.seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; border: 1px solid var(--line); background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+.seg button { border-right: 1px solid var(--line) !important; }
+.seg button:last-child { border-right: 0 !important; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button small { font-family: var(--f-mono); font-size: 11px; opacity: 0.75; margin-left: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 4px 10px 4px 6px; cursor: pointer; font-size: 13px; }
+.chip i { width: 12px; height: 12px; display: inline-block; flex: none; }
+.chip[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); font-weight: 600; }
+
+/* personal plan */
+.plan { margin-top: 16px; background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; display: grid; gap: 8px; }
+.plan h3 { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.plan h3 i { width: 14px; height: 14px; display: inline-block; }
+.plan ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.plan li { display: grid; grid-template-columns: 15em minmax(0, 1fr); gap: 2px 10px; font-size: 14px; }
+.plan li .dt { display: flex; gap: 8px; }
+.plan li .t { font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.plan li.all { color: var(--muted); }
+@media (max-width: 560px) { .plan li { grid-template-columns: minmax(0, 1fr); padding-block: 4px; border-top: 1px solid var(--grid); } }
+
+/* day sections */
+.day { margin-top: 26px; }
+.day-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 8px; }
+.day-h h2 { font-size: 30px; font-weight: 700; }
+.day-h .sub { color: var(--muted); font-size: 14px; }
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); }
+.grid { min-width: 760px; }
+.r { display: grid; grid-template-columns: var(--label-w) minmax(0, 1fr); border-top: 1px solid var(--grid); }
+.r:first-child { border-top: 0; }
+.r.dim > * { opacity: var(--dim); }
+.lab { position: sticky; left: 0; z-index: 2; background: var(--surface); padding: 6px 10px; border-right: 1px solid var(--line); min-width: 0; display: grid; gap: 1px; }
+.lab .t { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lab .n { font-weight: 500; font-size: 14px; overflow-wrap: anywhere; }
+.lab .who { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.lab .who span { font-size: 11px; padding: 0 5px; line-height: 17px; color: #fff; }
+.lab .who span.ext { background: transparent; color: var(--muted); border: 1px dashed var(--line); }
+.lab .who span.miss { background: #FFE58A; color: #3A3000; }
+.lab.person { grid-template-columns: 12px minmax(0, 1fr); align-items: center; column-gap: 8px; }
+.lab.person i { width: 12px; height: 12px; display: block; }
+.trk { position: relative; min-height: 42px;
+  background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px);
+  background-size: calc(100% * 60 / 690) 100%; }
+.hdr .trk { min-height: 26px; background-image: none; }
+.hdr .lab { font-family: var(--f-mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; justify-content: start; align-content: center; }
+.hr { position: absolute; top: 5px; transform: translateX(-50%); font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hr:first-child { transform: none; padding-left: 3px; }
+.dusk { position: absolute; top: 0; bottom: 0; right: 0; background: var(--dusk); pointer-events: none; }
+.mk { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--ember); pointer-events: none; z-index: 1; }
+.mk.alt { border-left-style: dashed; opacity: 0.8; }
+.mk.now { border-left-color: var(--accent); }
+.mk em { position: absolute; top: 2px; left: 4px; font-style: normal; font-family: var(--f-mono); font-size: 10px; color: var(--ember); white-space: nowrap; background: var(--surface); padding: 0 2px; }
+.mk.now em { color: var(--accent); }
+.b { position: absolute; height: 26px; border: 0; padding: 0 6px; cursor: pointer; font-size: 12px; font-weight: 500; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 1; }
+.b:hover { filter: brightness(1.08); box-shadow: 0 0 0 2px var(--ink); }
+.b.bg { opacity: 0.32; font-weight: 400; }
+.b.sel { box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--surface); }
+.ms { position: absolute; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%) rotate(45deg); background: var(--ink); border: 0; padding: 0; cursor: pointer; z-index: 1; }
+.notime { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); font-family: var(--f-mono); font-size: 11px; padding: 2px 6px; background: #FFE58A; color: #3A3000; border: 0; cursor: pointer; }
+
+/* axis view: one wide main line per day, collisions on thinner lines above and below */
+.axis { position: relative; min-width: 760px; }
+.ax-hr { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid var(--grid); }
+.ax-hl { position: absolute; top: 4px; transform: translateX(-50%); font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ax-hl:first-of-type { transform: none; padding-left: 3px; }
+.ax-main { position: absolute; left: 0; right: 0; background: var(--grid); border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); }
+.ax-lane { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dotted var(--line); }
+.ax-dusk { position: absolute; top: 0; bottom: 0; right: 0; background: var(--dusk); pointer-events: none; }
+.ax-b { position: absolute; border: 0; padding: 0 6px; cursor: pointer; font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 1; }
+.ax-b.thin { font-size: 11px; font-weight: 500; }
+.ax-b:hover { box-shadow: 0 0 0 2px var(--ink); }
+.ax-b.dim { opacity: var(--dim); }
+.ax-ms { position: absolute; width: 16px; height: 16px; transform: translate(-50%, -50%) rotate(45deg); background: var(--ink); border: 2px solid var(--surface); padding: 0; cursor: pointer; z-index: 2; }
+.ax-note { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.tx-l { text-shadow: 0 0 3px rgba(0,0,0,.75), 0 0 1px rgba(0,0,0,.9); }
+.tx-d { text-shadow: 0 0 3px rgba(255,255,255,.9); }
+
+/* agenda list */
+.ag { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ag-i.dim { opacity: var(--dim); }
+.ag-i button { width: 100%; text-align: left; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-left: 6px solid; padding: 8px 12px 10px;
+  display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 2px 12px; align-items: baseline; }
+.ag-t { font-family: var(--f-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; grid-row: 1 / span 2; }
+.ag-n { font-weight: 600; font-size: 15px; }
+.ag-who { display: flex; flex-wrap: wrap; gap: 3px; }
+.ag-who span { font-size: 11px; padding: 0 5px; line-height: 17px; color: #fff; }
+.ag-who span.ext { color: var(--muted); border: 1px dashed var(--line); }
+.ag-who span.miss { background: #FFE58A; color: #3A3000; }
+.ag-trk { grid-column: 1 / -1; position: relative; height: 8px; margin-top: 6px; background: var(--grid);
+  background-image: linear-gradient(to right, var(--line) 1px, transparent 1px); background-size: calc(100% * 60 / 690) 100%; }
+.ag-trk i { position: absolute; top: 0; bottom: 0; }
+.ag-dusk { right: 0; background: var(--dusk); }
+.ag-span { min-width: 3px; }
+.ag-pt { width: 8px; height: 8px; transform: translateX(-50%) rotate(45deg); background: var(--ink); }
+.ag-mk { width: 0; border-left: 2px solid var(--ember); top: -3px !important; bottom: -3px !important; }
+@media (max-width: 480px) { .ag-i button { grid-template-columns: minmax(0, 1fr); } .ag-t { grid-row: auto; } }
+
+/* legend + foot */
+.legend { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 26px; height: 14px; display: inline-block; }
+.legend .dk { width: 18px; height: 10px; background: var(--dusk); border: 1px solid var(--line); }
+.foot { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: grid; gap: 6px; max-width: 75ch; }
+.foot a { color: var(--accent); }
+
+/* detail sheet */
+.sheet { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: min(560px, 100%); z-index: 20;
+  background: var(--surface); border: 1px solid var(--line); border-bottom: 0; box-shadow: var(--shadow);
+  padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 10px; }
+.sheet .x { position: absolute; top: 8px; right: 8px; border: 1px solid var(--line); background: var(--bg); width: 32px; height: 32px; cursor: pointer; font-size: 18px; line-height: 1; }
+.sheet .k { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.sheet h3 { font-size: 26px; font-weight: 600; padding-right: 36px; }
+.sheet dl { margin: 0; display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 4px 10px; font-size: 14px; }
+.sheet dt { color: var(--muted); }
+.sheet dd { margin: 0; overflow-wrap: anywhere; }
+.sheet .typ { display: inline-block; width: 10px; height: 10px; margin-right: 6px; }
+@media (max-width: 640px) {
+  :root { --label-w: 150px; }
+  .top { grid-template-columns: 1fr; }
+  .grid { min-width: 640px; }
+  .hr .mm { display: none; }
+  .bar-ctl { position: static; }
+  .row .lbl { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: no-preference) { .sheet { animation: up 0.18s ease-out; } @keyframes up { from { transform: translate(-50%, 12px); opacity: 0; } } }
+
+/* live status + sign-in */
+.live-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13px; }
+.live { font-family: var(--f-mono); font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.live.ok i { background: #3E9B5F; }
+.live.off i { background: #D08A2E; }
+.auth { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.auth .me { font-weight: 500; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 5px 10px; cursor: pointer; font-size: 13px; min-height: 32px; }
+.btn:hover { border-color: var(--ink); }
+
+/* checklists */
+.ck-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 26px 0 8px; }
+.ck-h h2 { font-size: 30px; font-weight: 700; }
+.ck-h h3 { font-size: 22px; font-weight: 600; }
+.sum { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.ck-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ck { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--line); padding: 9px 12px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; }
+.ck.done { border-left-color: #3E9B5F; }
+.ck.part { border-left-color: #D9A21B; }
+.ck.cancel { opacity: 0.6; }
+.ck.cancel .nm { text-decoration: line-through; }
+.ck.dim { opacity: var(--dim); }
+.ck .nm { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+.ck .nm .t { font-family: var(--f-mono); font-size: 13px; font-weight: 400; color: var(--muted); margin-right: 8px; font-variant-numeric: tabular-nums; }
+.ck .sub { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.ck .last { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.ck .who { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.ck .who span { font-size: 11px; padding: 0 5px; line-height: 17px; color: #fff; }
+.ck .who span.ext { color: var(--muted); border: 1px dashed var(--line); }
+.ck .who span.miss { background: #FFE58A; color: #3A3000; }
+.tg { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.tg label { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--bg); padding: 6px 10px; min-height: 40px; cursor: pointer; font-size: 13px; user-select: none; }
+.tg label.on { border-color: #3E9B5F; box-shadow: inset 0 0 0 1px #3E9B5F; font-weight: 600; }
+.tg input { width: 20px; height: 20px; margin: 0; accent-color: #3E9B5F; cursor: pointer; }
+.badge { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); padding: 4px 10px; min-height: 32px; font-size: 13px; color: var(--muted); }
+.badge.on { border-color: #3E9B5F; color: var(--ink); font-weight: 600; }
+.tg select { font: inherit; font-size: 14px; min-height: 40px; padding: 4px 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.ro { font-size: 13px; color: var(--muted); }
+.b.st-done::before, .ax-b.st-done::before { content: "✓ "; }
+.b.st-cancel, .ax-b.st-cancel { text-decoration: line-through; opacity: 0.55; }
+.todo { margin-top: 10px; background: var(--surface); border: 1px solid var(--line); padding: 12px 16px; }
+.todo-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 6px; }
+.todo-h i { width: 14px; height: 14px; display: inline-block; flex: none; }
+.todo-h .btn { font-weight: 600; font-size: 15px; }
+.todo ul { margin: 0; padding-left: 20px; font-size: 14px; display: grid; gap: 2px; }
+.todo li.late { color: var(--ember); font-weight: 600; }
+.toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40;
+  background: var(--ink); color: var(--bg); padding: 10px 14px; font-size: 14px; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
+@media (max-width: 560px) { .ck { grid-template-columns: minmax(0, 1fr); } .tg { justify-content: flex-start; } }
+</style><script>if ('serviceWorker' in navigator && location.protocol === 'https:') { navigator.serviceWorker.register('sw.js').catch(function () {}); }</script></head><body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Požární experiment · CLT modul · terén</div>
+      <h1><span class="b-clt">CLT</span> <span class="b-re">RE</span><span class="b-fresh">FRESH</span></h1>
+      <div class="meta" id="meta"></div>
+      <div class="lead" id="lead"></div>
+    </div>
+    <div class="start"><b>Čt 5. 11. · 11:15</b><span>zapálení, v 11:00 úvodní slovo</span></div>
+  </header>
+
+  <div class="bar-ctl">
+    <div class="row" id="row-days"><span class="lbl">Den</span><div class="seg" id="days" role="group" aria-label="Den"></div></div>
+    <div class="row"><span class="lbl">Pohled</span><div class="seg" id="views" role="group" aria-label="Pohled">
+      <button type="button" id="v-axis" data-v="axis">Osa</button><button type="button" id="v-list" data-v="list">Seznam</button><button type="button" id="v-tasks" data-v="tasks">Činnosti</button><button type="button" id="v-people" data-v="people">Lidé</button></div></div>
+    <div class="row"><span class="lbl">Odškrtávání</span><div class="seg" id="views2" role="group" aria-label="Odškrtávání">
+      <button type="button" id="v-mine" data-v="mine">Moje věci</button><button type="button" id="v-status" data-v="status">Stav úkolů</button><button type="button" id="v-buy" data-v="buy">Nákup</button><button type="button" id="v-gear" data-v="gear">Přístroje</button><button type="button" id="v-open" data-v="open">Otevřené body</button><button type="button" id="v-todo" data-v="todo">Nesplněno</button></div></div>
+    <div class="row"><span class="lbl">Osoba</span><div class="row" id="people" role="group" aria-label="Osoba"></div></div>
+    <div class="live-row"><span class="live" id="live"><i></i><span></span></span><span class="auth" id="auth"></span></div>
+  </div>
+
+  <section class="plan" id="plan" hidden></section>
+  <main id="board"></main>
+
+  <div class="legend" id="legend"></div>
+  <footer class="foot">
+    <div id="src-note">Stránka je kopie Excelu CLT_REFRESH_harmonogram.xlsx. Změny se dělají v Excelu (list Úkoly).</div>
+    <div>Šedý pruh = po západu slunce (cca 16:30).</div>
+    <div>Žlutě = chybí informace (DOPLNIT). Klepnutím na úkol zobrazíš detail. Pohled Osa ukazuje každý den na jedné čáře, souběžné činnosti jsou nad a pod ní. Seznam je pro telefon, Osa, Činnosti a Lidé pro počítač (na telefonu se posouvají do strany).</div>
+  </footer>
+</div>
+
+<aside class="sheet" id="sheet" hidden aria-live="polite"></aside>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+const SNAPSHOT = {"lead": "Ing. Eva Šopíková, Ph.D.", "people": [{"key": "Šopíková", "color": "#1F4E79", "full": "Ing. Eva Šopíková, Ph.D."}, {"key": "Holeček", "color": "#1A9BA0", "full": "Ing. Jan Holeček"}, {"key": "Czyžová", "color": "#2E8B2E", "full": "Ing. Štěpánka Czyžová"}, {"key": "Symonová", "color": "#9B2226", "full": "Ing. Kateřina Symonová"}, {"key": "Rychlý", "color": "#A020A0", "full": "Štěpán Rychlý"}, {"key": "Chudová", "color": "#E4572E", "full": "Ing. Dana Chudová, Ph.D."}, {"key": "Dudáček", "color": "#7F7F7F", "full": "prof. Dr. Ing. Aleš Dudáček"}, {"key": "Semianová", "color": "#7A1F5C", "full": "Ing. Pavlína Semianová"}, {"key": "Hájková", "color": "#5B5FC7", "full": "Hana Hájková"}, {"key": "Dostál", "color": "#262626", "full": "Ing. Michal Dostál, Ph.D."}, {"key": "Thomiczek", "color": "#5E5E1A", "full": "Ing. Adam Thomiczek, Ph.D."}, {"key": "Hanzelka", "color": "#B87420", "full": "Patrik Hanzelka"}, {"key": "Hillmann", "color": "#C98A3A", "full": "Michal Hillmann"}, {"key": "Jarošek", "color": "#D4527A", "full": "Bc. Kryštof Jarošek"}, {"key": "Pavlišta", "color": "#B8AE3C", "full": "Miroslav Pavlišta"}, {"key": "Janda", "color": "#B8AE3C", "full": "Tomáš Janda"}, {"key": "Ďuriš", "color": "#B8AE3C", "full": "Ondřej Ďuriš"}, {"key": "Klimek", "color": "#B8AE3C", "full": "Adam Klimek"}], "types": [{"name": "Logistika", "color": "#5B7DB1"}, {"name": "Stavba", "color": "#8D6E4F"}, {"name": "Nátěr", "color": "#E69138"}, {"name": "Instrumentace", "color": "#3C78D8"}, {"name": "Měření", "color": "#6AA84F"}, {"name": "Experiment", "color": "#CC0000"}, {"name": "Hašení", "color": "#1C4587"}, {"name": "Úklid", "color": "#999999"}, {"name": "Bezpečnost", "color": "#F1C232"}, {"name": "Pauza", "color": "#D9D9D9"}, {"name": "Milník", "color": "#000000"}], "tasks": [{"id": "T01", "type": "Logistika", "date": "2026-11-02", "from": "08:30", "to": "09:00", "what": "Předání", "detail": "Chudová ověří.", "who": "Czyžová, Holeček", "gear": "", "note": "", "state": "Nezačato"}, {"id": "T02", "type": "Milník", "date": "2026-11-02", "from": "09:00", "to": "09:00", "what": "Příjezd", "detail": "", "who": "—", "gear": "", "note": "", "state": "Nezačato"}, {"id": "T03", "type": "Stavba", "date": "2026-11-02", "from": "09:00", "to": "11:30", "what": "Stavba modulu – jeřáb ZÚ HZS + panely", "detail": "Panely: Stavbo ví. Stavba max do 11:30.", "who": "ZÚ HZS, Stavbo", "gear": "Jeřáb ZÚ HZS, panely CLT", "note": "Stavbu řídí firma. Jména + SPZ pro jeřáb pošle Czyžová týden předem.", "state": "Nezačato"}, {"id": "T04", "type": "Nátěr", "date": "2026-11-02", "from": "11:30", "to": "13:30", "what": "Protipožární nátěr – 1. vrstva", "detail": "Model – Adam. Materiál na 116.", "who": "Hájková, Holeček", "gear": "2× váleček, 1× roháček, miska, respirátor, štít, jednorázové obleky", "note": "Roháček, respirátory, štíty, obleky z fakulty.", "state": "Nezačato"}, {"id": "T05", "type": "Stavba", "date": "2026-11-02", "from": "11:30", "to": "13:30", "what": "Nábytek – příprava venku", "detail": "Stolek, 3 křesla s matracemi. Dovnitř až na hotovou podlahu.", "who": "Czyžová, Symonová", "gear": "", "note": "Souběh s T06 schválený – stihnou obojí.", "state": "Nezačato"}, {"id": "T06", "type": "Instrumentace", "date": "2026-11-02", "from": "11:30", "to": "14:30", "what": "Vrtání pro termočlánky + radiometry", "detail": "Od spodu konstrukce.", "who": "Czyžová, Symonová", "gear": "Vrtáky 3 mm (10 ks), vrtačka, baterie", "note": "Souběh s T05 schválený.", "state": "Nezačato"}, {"id": "T08", "type": "Nátěr", "date": "2026-11-03", "from": "07:30", "to": "08:30", "what": "Protipožární nátěr – 2. vrstva", "detail": "Hájková + Holeček.", "who": "Hájková, Holeček", "gear": "Válečky, roháček, miska, respirátor, štít, jednorázové obleky", "note": "", "state": "Nezačato"}, {"id": "T09", "type": "Pauza", "date": "2026-11-03", "from": "08:30", "to": "09:30", "what": "Snídaně", "detail": "", "who": "—", "gear": "", "note": "", "state": "Nezačato"}, {"id": "T35", "type": "Bezpečnost", "date": "2026-11-03", "from": "09:30", "to": "10:00", "what": "Ohlásit akci na KOPIS HZS MSK", "detail": "", "who": "Holeček, Šopíková", "gear": "", "note": "Čas orientační.", "state": "Nezačato"}, {"id": "T10", "type": "Stavba", "date": "2026-11-03", "from": "09:30", "to": "15:30", "what": "Podlaha", "detail": "Řetězy + díra v podlaze a ven (od spodu konstrukce). Dát do pytle.", "who": "Czyžová, Symonová, Rychlý", "gear": "Řetězy, pytle 50 l", "note": "Řetězy z fakulty.", "state": "Nezačato"}, {"id": "T28", "type": "Stavba", "date": "2026-11-03", "from": "15:30", "to": "16:00", "what": "Nábytek dovnitř", "detail": "Na hotovou podlahu.", "who": "Czyžová, Symonová", "gear": "Stolek, 3 křesla s matracemi", "note": "Čas odhad – hned po podlaze.", "state": "Nezačato"}, {"id": "T11", "type": "Instrumentace", "date": "2026-11-04", "from": "09:00", "to": "12:00", "what": "Termočlánky venkovní", "detail": "", "who": "Rychlý, Symonová, Holeček", "gear": "Termočlánky", "note": "", "state": "Nezačato"}, {"id": "T12", "type": "Měření", "date": "2026-11-04", "from": "09:00", "to": "12:00", "what": "Radiometry – instalace", "detail": "Chudová + 4 studenti.", "who": "Chudová, Pavlišta, Janda, Ďuriš, Klimek", "gear": "Radiometry", "note": "", "state": "Nezačato"}, {"id": "T13", "type": "Měření", "date": "2026-11-04", "from": "09:00", "to": "12:00", "what": "Teodolit – podstavce", "detail": "", "who": "Hanzelka, Hillmann", "gear": "Teodolit, podstavce", "note": "", "state": "Nezačato"}, {"id": "T14", "type": "Instrumentace", "date": "2026-11-04", "from": "13:30", "to": "15:30", "what": "Zkouška termočlánků", "detail": "", "who": "Dudáček, Semianová", "gear": "ALMEMO ústředny, kalibrátor CL-123", "note": "", "state": "Nezačato"}, {"id": "T15", "type": "Měření", "date": "2026-11-05", "from": "08:00", "to": "09:00", "what": "Meteostanice", "detail": "", "who": "Holeček", "gear": "Meteostanice", "note": "", "state": "Nezačato"}, {"id": "T16", "type": "Měření", "date": "2026-11-05", "from": "08:00", "to": "09:00", "what": "Průtokoměr", "detail": "", "who": "Czyžová", "gear": "Ultrazvukový průtokoměr Prosonic", "note": "", "state": "Nezačato"}, {"id": "T17", "type": "Instrumentace", "date": "2026-11-05", "from": "08:00", "to": "10:30", "what": "Zapojení termočlánků", "detail": "Od cca 10:00–10:15 přebírá Dudáček.", "who": "Rychlý, Semianová", "gear": "ALMEMO ústředny, notebook", "note": "", "state": "Nezačato"}, {"id": "T19", "type": "Měření", "date": "2026-11-05", "from": "08:00", "to": "10:30", "what": "Kamery", "detail": "", "who": "Thomiczek, Jarošek", "gear": "Kamery", "note": "", "state": "Nezačato"}, {"id": "T20", "type": "Měření", "date": "2026-11-05", "from": "08:00", "to": "10:30", "what": "Termokamery", "detail": "", "who": "Chudová", "gear": "FLIR T640 + notebook, FLIR T1020", "note": "", "state": "Nezačato"}, {"id": "T21", "type": "Měření", "date": "2026-11-05", "from": "08:00", "to": "10:30", "what": "Radiometry", "detail": "4 studenti.", "who": "Pavlišta, Janda, Ďuriš, Klimek", "gear": "Radiometry", "note": "", "state": "Nezačato"}, {"id": "T18", "type": "Instrumentace", "date": "2026-11-05", "from": "10:00", "to": "10:30", "what": "Zapojení termočlánků – Dudáček přebírá", "detail": "Odjezd ze školy 9:30, příjezd cca 10:00–10:15. Vystřídá nebo doplní Rychlého.", "who": "Dudáček", "gear": "", "note": "", "state": "Nezačato"}, {"id": "T31", "type": "Měření", "date": "2026-11-05", "from": "10:00", "to": "10:30", "what": "Teodolit – nulové čtení", "detail": "Před plněním barelů.", "who": "Hanzelka, Hillmann", "gear": "Teodolit, měřítka", "note": "", "state": "Nezačato"}, {"id": "T22", "type": "Měření", "date": "2026-11-05", "from": "10:30", "to": "11:00", "what": "Drony – příprava", "detail": "Dostál + studenti.", "who": "Dostál, Pavlišta, Janda, Ďuriš, Klimek", "gear": "Drony", "note": "Studenti se rozdělí s plněním barelů.", "state": "Nezačato"}, {"id": "T30", "type": "Logistika", "date": "2026-11-05", "from": "10:30", "to": "11:00", "what": "Plnění barelů na střeše (5 × 100 l)", "detail": "Prázdné barely na střeše, voda z CAS JSDH čerpadlem.", "who": "Pavlišta, Janda, Ďuriš, Klimek, Jarošek", "gear": "Barely, čerpadlo, hadičky", "note": "Těsně před zapálením – hlídat čas. Jarošek pak pomáhá studentům, s čím je potřeba.", "state": "Nezačato"}, {"id": "T29", "type": "Bezpečnost", "date": "2026-11-05", "from": "10:30", "to": "14:30", "what": "JSDH – příjezd a pohotovost", "detail": "CAS: voda na barely, chlazení a hašení.", "who": "JSDH", "gear": "CAS", "note": "", "state": "Nezačato"}, {"id": "T32", "type": "Měření", "date": "2026-11-05", "from": "10:30", "to": "14:30", "what": "Teodolit – průhyb při plnění a během požáru", "detail": "", "who": "Hanzelka, Hillmann", "gear": "Teodolit, měřítka", "note": "Interval čtení DOPLNIT.", "state": "Nezačato"}, {"id": "T36", "type": "Experiment", "date": "2026-11-05", "from": "11:00", "to": "11:15", "what": "START – úvodní slovo", "detail": "", "who": "Šopíková", "gear": "", "note": "", "state": "Nezačato"}, {"id": "T33", "type": "Milník", "date": "2026-11-05", "from": "11:15", "to": "11:15", "what": "Zapálení křesla (izopropanol)", "detail": "", "who": "Thomiczek", "gear": "Izopropanol (ze školy)", "note": "", "state": "Nezačato"}, {"id": "T23", "type": "Experiment", "date": "2026-11-05", "from": "11:15", "to": "14:30", "what": "EXPERIMENT – zapálení 11:15", "detail": "Povel k ukončení dává Šopíková. Prohoření hlídá každý své: ústředny Dudáček + Semianová, termokamery Chudová. Když modul po vyhoření zatížení nehoří: palety dovnitř (Holeček + Czyžová) a druhý požár.", "who": "Všichni", "gear": "", "note": "Konec 14:30 je odhad – nechá se dohořet.", "state": "Nezačato"}, {"id": "T27", "type": "Měření", "date": "2026-11-05", "from": "11:15", "to": "15:00", "what": "Drony – let od zapálení do uhašení", "detail": "", "who": "Dostál, Pavlišta, Janda, Ďuriš, Klimek", "gear": "Drony", "note": "Konec = po uhašení (čas odhad).", "state": "Nezačato"}, {"id": "T24", "type": "Hašení", "date": "2026-11-05", "from": "14:30", "to": "15:00", "what": "Hašení", "detail": "Na povel Šopíkové: zhroucení nebo nebezpečí. JSDH s vybavením a CAS.", "who": "Holeček, Czyžová, JSDH", "gear": "", "note": "Čas není pevný – podle průběhu.", "state": "Nezačato"}, {"id": "T25", "type": "Úklid", "date": "2026-11-05", "from": "14:30", "to": "18:00", "what": "Úklid", "detail": "", "who": "Všichni", "gear": "", "note": "Začíná souběžně s hašením.", "state": "Nezačato"}, {"id": "T34", "type": "Úklid", "date": "2026-11-05", "from": "15:00", "to": "16:00", "what": "Vyříznutí vzorků panelů – hloubka zuhelnatění", "detail": "", "who": "JSDH", "gear": "", "note": "Čas odhad – po dohašení.", "state": "Nezačato"}, {"id": "T26", "type": "Bezpečnost", "date": "2026-11-05", "from": "16:00", "to": "18:00", "what": "Svícení – osvětlovací balon", "detail": "Zajistí JSDH + firma.", "who": "Czyžová", "gear": "Osvětlovací balon", "note": "Tma cca od 16:30.", "state": "Nezačato"}], "buy": [{"n": 1, "name": "Váleček", "qty": "2", "unit": "ks", "spec": "", "act": "Protipožární nátěr (T04, T08)", "need": "2026-11-02", "who": "Šopíková", "note": "", "Koupeno": "ne"}, {"n": 2, "name": "Miska na barvu", "qty": "2", "unit": "ks", "spec": "", "act": "Protipožární nátěr", "need": "2026-11-02", "who": "Šopíková", "note": "", "Koupeno": "ne"}, {"n": 3, "name": "Štětec", "qty": "2", "unit": "ks", "spec": "", "act": "Protipožární nátěr", "need": "2026-11-02", "who": "Šopíková", "note": "", "Koupeno": "ne"}, {"n": 4, "name": "OSB deska", "qty": "4", "unit": "ks", "spec": "tl. 15 mm, 2500 × 1250 mm", "act": "Podlaha (T10) + nábytek do prostoru (T05)", "need": "2026-11-02", "who": "Šopíková", "note": "V seznamu od Evy bylo 18 mm, upraveno na 15 mm.", "Koupeno": "ne"}, {"n": 5, "name": "Latě", "qty": "7", "unit": "ks", "spec": "4 × 6 cm, délka 5 m", "act": "Nábytek (T05) + podlaha (T10)", "need": "2026-11-02", "who": "Šopíková", "note": "", "Koupeno": "ne"}, {"n": 6, "name": "Molitan", "qty": "2", "unit": "ks", "spec": "tl. 10 cm, 200 × 90 cm", "act": "Nábytek – křesla (T05)", "need": "2026-11-02", "who": "Šopíková", "note": "", "Koupeno": "ne"}, {"n": 7, "name": "Požární tmel", "qty": "DOPLNIT", "unit": "ks", "spec": "typ DOPLNIT", "act": "Zadělání nedokonalostí v konstrukci", "need": "2026-11-02", "who": "Šopíková", "note": "Doplní Eva.", "Koupeno": "ne"}, {"n": 8, "name": "Trojzásuvka „AVB Classic“", "qty": "1", "unit": "ks", "spec": "asi ABB – ověřit katalogové číslo", "act": "Do předělané díry v konstrukci", "need": "2026-11-02", "who": "Šopíková", "note": "Zásuvka (Classic) a rámeček (Tango) z různých řad nemusí pasovat. Doplní Eva.", "Koupeno": "ne"}, {"n": 9, "name": "Trojrámeček „AVB Tango“", "qty": "1", "unit": "ks", "spec": "asi ABB Tango – ověřit", "act": "Do předělané díry v konstrukci", "need": "2026-11-02", "who": "Šopíková", "note": "Ověřit, že sedí k zásuvce.", "Koupeno": "ne"}, {"n": 10, "name": "Pytel na odpadky", "qty": "DOPLNIT", "unit": "ks", "spec": "50 l", "act": "Podlaha – „dát do pytle“ (T10)", "need": "2026-11-03", "who": "Šopíková", "note": "Koupit? Možná jsou ve škole.", "Koupeno": "ne"}, {"n": 11, "name": "Alobal", "qty": "DOPLNIT", "unit": "role", "spec": "", "act": "Ochrana čidel, kamer a kabelů (přes vatu), uvnitř i vně", "need": "2026-11-02", "who": "Šopíková", "note": "Koupit.", "Koupeno": "ne"}, {"n": 12, "name": "Jednorázové rukavice", "qty": "DOPLNIT", "unit": "bal.", "spec": "vel. M a XL", "act": "Nátěr, práce", "need": "2026-11-02", "who": "Šopíková", "note": "", "Koupeno": "ne"}, {"n": 13, "name": "Dlouhý vrták 3 mm", "qty": "10", "unit": "ks", "spec": "délka DOPLNIT", "act": "Vrtání pro termočlánky (T06)", "need": "2026-11-02", "who": "Šopíková", "note": "", "Koupeno": "ne"}, {"n": 14, "name": "??? – řádek „10 ks“ bez názvu", "qty": "10", "unit": "ks", "spec": "", "act": "DOPLNIT", "need": "2026-11-02", "who": "Šopíková", "note": "V e-mailu chybí název položky. Doplní Eva.", "Koupeno": "ne"}, {"n": 15, "name": "Vázací drát tenký", "qty": "DOPLNIT", "unit": "role", "spec": "", "act": "Uchycení termočlánků", "need": "2026-11-02", "who": "Šopíková", "note": "", "Koupeno": "ne"}, {"n": 16, "name": "Strečová fólie", "qty": "DOPLNIT", "unit": "role", "spec": "", "act": "Ochrana techniky", "need": "2026-11-02", "who": "Šopíková", "note": "Koupit? Možná je ve škole.", "Koupeno": "ne"}], "gear": [{"n": 1, "sec": "A – Seznam přístrojů od Evy", "name": "Měřicí ústředna ALMEMO 5690-2M (nová)", "act": "Termočlánky: zkouška 4.11., zapojení + experiment 5.11.", "need": "2026-11-04", "op": "Dudáček, Semianová", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 2, "sec": "A – Seznam přístrojů od Evy", "name": "Měřicí ústředna ALMEMO 500", "act": "Termočlánky: zkouška 4.11., zapojení + experiment 5.11.", "need": "2026-11-04", "op": "Dudáček, Semianová", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 3, "sec": "A – Seznam přístrojů od Evy", "name": "ALMEMO 710", "act": "doplní se později", "need": "", "op": "doplní se později", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 4, "sec": "A – Seznam přístrojů od Evy", "name": "ALMEMO 2590-4AS", "act": "doplní se později", "need": "", "op": "doplní se později", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 5, "sec": "A – Seznam přístrojů od Evy", "name": "ALMEMO 2890-9 (hranaté)", "act": "doplní se později", "need": "", "op": "doplní se později", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 6, "sec": "A – Seznam přístrojů od Evy", "name": "Kalibrátor CL-123", "act": "Zkouška termočlánků 4.11.", "need": "2026-11-04", "op": "Dudáček, Semianová", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 7, "sec": "A – Seznam přístrojů od Evy", "name": "Termokamera FLIR T640 + notebook k termokameře", "act": "Termokamery 5.11.", "need": "2026-11-05", "op": "Chudová", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 8, "sec": "A – Seznam přístrojů od Evy", "name": "Termokamera FLIR T1020", "act": "Termokamery 5.11.", "need": "2026-11-05", "op": "Chudová", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 9, "sec": "A – Seznam přístrojů od Evy", "name": "Notebook odolný DELL (měřicí)", "act": "Ústředny ALMEMO", "need": "2026-11-04", "op": "Dudáček, Semianová", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 10, "sec": "A – Seznam přístrojů od Evy", "name": "Zelený kufr s nářadím", "act": "Celá akce", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 11, "sec": "A – Seznam přístrojů od Evy", "name": "Ultrazvukový průtokoměr Prosonic", "act": "Průtokoměr 5.11.", "need": "2026-11-05", "op": "Czyžová", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 12, "sec": "A – Seznam přístrojů od Evy", "name": "Měření vlhkosti dřeva", "act": "doplní se později", "need": "", "op": "doplní se později", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 13, "sec": "A – Seznam přístrojů od Evy", "name": "Analyzátor MGAprime", "act": "doplní se později", "need": "", "op": "doplní se později", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 14, "sec": "A – Seznam přístrojů od Evy", "name": "Elektrocentrála Honda EU20i", "act": "Napájení, celá akce", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 15, "sec": "A – Seznam přístrojů od Evy", "name": "Testo 350", "act": "doplní se později", "need": "", "op": "doplní se později", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 16, "sec": "A – Seznam přístrojů od Evy", "name": "Notebook Getac", "act": "doplní se později", "need": "", "op": "doplní se později", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 17, "sec": "B – Další vybavení a nářadí ze školy", "name": "Radiometry + stojany", "act": "Instalace 4.11., měření 5.11. (T12, T21)", "need": "2026-11-04", "op": "Chudová, Pavlišta, Janda, Ďuriš, Klimek", "carrier": "", "note": "Počet DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 18, "sec": "B – Další vybavení a nářadí ze školy", "name": "Čerpadla, hadičky", "act": "Chlazení radiometrů a kamer, plnění barelů (T30)", "need": "2026-11-04", "op": "Chudová, Pavlišta, Janda, Ďuriš, Klimek", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 19, "sec": "B – Další vybavení a nářadí ze školy", "name": "Termočlánky", "act": "Venkovní 4.11., zapojení 5.11.", "need": "2026-11-04", "op": "Dudáček, Semianová", "carrier": "", "note": "Počet a typ DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 20, "sec": "B – Další vybavení a nářadí ze školy", "name": "Teodolit + podstavce", "act": "4.11. (T13)", "need": "2026-11-04", "op": "Hanzelka, Hillmann", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 21, "sec": "B – Další vybavení a nářadí ze školy", "name": "Měřítka, vruty", "act": "K teodolitu (T13)", "need": "2026-11-04", "op": "Hanzelka, Hillmann", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 22, "sec": "B – Další vybavení a nářadí ze školy", "name": "Meteostanice", "act": "5.11. (T15)", "need": "2026-11-05", "op": "Holeček", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 23, "sec": "B – Další vybavení a nářadí ze školy", "name": "Kamery", "act": "5.11. (T19)", "need": "2026-11-05", "op": "Thomiczek", "carrier": "", "note": "Počet DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 24, "sec": "B – Další vybavení a nářadí ze školy", "name": "Drony", "act": "5.11. (T22, T27)", "need": "2026-11-05", "op": "Dostál", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 25, "sec": "B – Další vybavení a nářadí ze školy", "name": "Aku vrtačka + baterie", "act": "Vrtání 2.11. (T06)", "need": "2026-11-02", "op": "Czyžová, Symonová", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 26, "sec": "B – Další vybavení a nářadí ze školy", "name": "Elektrocentrály (další?)", "act": "Napájení", "need": "2026-11-02", "op": "—", "carrier": "", "note": "V poznámkách „centrály“ (množné číslo). Honda EU20i je v části A.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 27, "sec": "B – Další vybavení a nářadí ze školy", "name": "Prodlužovačky", "act": "Napájení", "need": "2026-11-02", "op": "—", "carrier": "", "note": "Počet a délka DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 28, "sec": "B – Další vybavení a nářadí ze školy", "name": "EcoFlow", "act": "Napájení", "need": "2026-11-02", "op": "—", "carrier": "", "note": "Nabít den předem.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 29, "sec": "B – Další vybavení a nářadí ze školy", "name": "Stan 6 × 3 m", "act": "Kryje modul", "need": "2026-11-02", "op": "—", "carrier": "", "note": "Musí být vyšší než modul (2,4 m + podklad). Výška DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 30, "sec": "B – Další vybavení a nářadí ze školy", "name": "Topidlo do stanu", "act": "Zázemí", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 31, "sec": "B – Další vybavení a nářadí ze školy", "name": "Osvětlovací balon", "act": "5.11. 16:00–18:00 (T26)", "need": "2026-11-05", "op": "Czyžová", "carrier": "", "note": "JSDH + firma.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 32, "sec": "B – Další vybavení a nářadí ze školy", "name": "Palety", "act": "Záložní palivo – druhý požár", "need": "2026-11-05", "op": "Holeček, Czyžová", "carrier": "", "note": "Když modul po vyhoření zatížení nehoří, palety dovnitř a druhý požár. Czyžová sežene. Počet DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 33, "sec": "B – Další vybavení a nářadí ze školy", "name": "Panel navíc do pece 2× (1,5 × 1,5 m)", "act": "Pec", "need": "", "op": "Chudová", "carrier": "", "note": "Zbytek: Chudová.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 34, "sec": "B – Další vybavení a nářadí ze školy", "name": "K nátěru ze školy: roháček, respirátory, obličejové štíty, jednorázové obleky", "act": "Nátěr 2.11. a 3.11. (T04, T08)", "need": "2026-11-02", "op": "Hájková, Holeček", "carrier": "", "note": "Počty DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 35, "sec": "B – Další vybavení a nářadí ze školy", "name": "Řetězy (ze školy)", "act": "Podlaha 3.11. (T10)", "need": "2026-11-03", "op": "Czyžová, Symonová, Rychlý", "carrier": "", "note": "Počet DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 36, "sec": "B – Další vybavení a nářadí ze školy", "name": "Izopropanol (ze školy)", "act": "Zapálení křesla (T33)", "need": "2026-11-05", "op": "Thomiczek", "carrier": "", "note": "Množství DOPLNIT.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 37, "sec": "B – Další vybavení a nářadí ze školy", "name": "Nábytek: stolek, 3 křesla s matracemi", "act": "Požární zatížení (T05, T28)", "need": "2026-11-02", "op": "Czyžová, Symonová", "carrier": "", "note": "Už je k dispozici.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 38, "sec": "B – Další vybavení a nářadí ze školy", "name": "Nářadí z REFRESHe", "act": "Celá akce", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 39, "sec": "B – Další vybavení a nářadí ze školy", "name": "Pila", "act": "Celá akce", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 40, "sec": "B – Další vybavení a nářadí ze školy", "name": "Světla", "act": "Práce v modulu, kamery, úklid po setmění", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 41, "sec": "B – Další vybavení a nářadí ze školy", "name": "Žebřík malý", "act": "Celá akce", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 42, "sec": "B – Další vybavení a nářadí ze školy", "name": "Žebřík velký", "act": "Celá akce", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 43, "sec": "B – Další vybavení a nářadí ze školy", "name": "Zelené nádoby (bečky)", "act": "Zatížení střechy 5 × 100 l (T30)", "need": "2026-11-02", "op": "Pavlišta, Janda, Ďuriš, Klimek", "carrier": "", "note": "Na střechu prázdné, plní se 5.11. z CAS. Jedna navíc: voda na chlazení radiometrů a kamer.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 44, "sec": "B – Další vybavení a nářadí ze školy", "name": "Metr", "act": "Celá akce", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 45, "sec": "B – Další vybavení a nářadí ze školy", "name": "Rýny", "act": "Ochrana kabelů", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 46, "sec": "B – Další vybavení a nářadí ze školy", "name": "Hasicí roušky", "act": "Bezpečnost", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 47, "sec": "B – Další vybavení a nářadí ze školy", "name": "Vata", "act": "Ochrana čidel, kamer a kabelů; utěsnění prostupů termočlánků", "need": "2026-11-02", "op": "—", "carrier": "", "note": "Na vatu se dává alobal.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 48, "sec": "B – Další vybavení a nářadí ze školy", "name": "Vysílačky", "act": "Celá akce", "need": "2026-11-02", "op": "—", "carrier": "", "note": "Nabít den předem.", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}, {"n": 49, "sec": "B – Další vybavení a nářadí ze školy", "name": "Šablony REFRESH + spray", "act": "Logo REFRESH na modul", "need": "2026-11-02", "op": "—", "carrier": "", "note": "", "Zkontrolováno / nabito": "ne", "Naloženo": "ne", "Na místě": "ne", "Vráceno": "ne"}], "open": [{"n": 1, "area": "Měření", "text": "Druhý termočlánkový strom: střed u dveří, nebo levý roh vpředu? Rozhodnout před vrtáním 2.11.", "why": "Vrtání T06.", "owner": "Šopíková", "Stav": "Otevřeno"}, {"n": 2, "area": "Měření", "text": "Ověřit, že ALMEMO ústředny poberou všechny kanály (2 stromy, 20 TČ stěna/střecha, radiometry). Řeší Dudáček, v pořádku.", "why": "Jinak nepůjde vše měřit.", "owner": "Dudáček / Semianová", "Stav": "Vyřešeno"}, {"n": 3, "area": "Zatížení", "text": "Plnění barelů 10:30–11:00, zapálení 11:15. Stihne se 500 l? Jinak posunout plnění dřív. Stihne se.", "why": "Zpoždění zapálení.", "owner": "Šopíková", "Stav": "Vyřešeno"}, {"n": 4, "area": "Teodolit", "text": "Interval čtení průhybu během požáru. Vyřeší se na místě.", "why": "Úkol T32.", "owner": "Hanzelka, Hillmann", "Stav": "Vyřešeno"}, {"n": 5, "area": "Po experimentu", "text": "Odvoz shořelého modulu: kontejner by měl být zařízený na místě. Ověřit. Chudová dodá informaci příští týden (do 23. 10.).", "why": "Úklid 5.11.", "owner": "Chudová", "Stav": "Otevřeno"}, {"n": 6, "area": "Stan", "text": "Stan kryje modul. Modul zvenku cca 2,6 m na šířku, stan 3 m. Ověřit výšku stanu (víc než 2,4 m + podklad). Termín: do pá 16. 10.", "why": "Nízký stan modul nezakryje.", "owner": "Holeček", "Stav": "Otevřeno"}, {"n": 7, "area": "Nákup", "text": "Řádek „10 ks“ bez názvu, „AVB“ → ABB, řady Classic/Tango, chybějící množství.", "why": "Nejde objednat.", "owner": "Šopíková", "Stav": "Otevřeno"}], "log": [], "at": "2026-10-14 14:57"};
+const CONFIG = (typeof window.CLT_CONFIG === "object" && window.CLT_CONFIG) || {};
+const LIVE = !!CONFIG.api;
+let DATA = SNAPSHOT;
+const DAYS = [
+  { key: "2026-11-02", short: "Po 2. 11.", long: "Pondělí 2. 11.", sub: "stavba modulu, protipožární nátěr, nábytek, vrtání", tag: "po" },
+  { key: "2026-11-03", short: "Út 3. 11.", long: "Úterý 3. 11.", sub: "druhý nátěr, podlaha", tag: "ut" },
+  { key: "2026-11-04", short: "St 4. 11.", long: "Středa 4. 11.", sub: "venkovní termočlánky, radiometry, teodolit, zkouška termočlánků", tag: "st" },
+  { key: "2026-11-05", short: "Čt 5. 11.", long: "Čtvrtek 5. 11.", sub: "zapojení měření, experiment, hašení, úklid", tag: "ct" },
+];
+const START = 7 * 60, END = 18 * 60 + 30, SPAN = END - START, DUSK = 16 * 60 + 30;
+const VIEWS = ["axis", "list", "tasks", "people", "mine", "status", "buy", "gear", "open", "todo"];
+const CHECK_VIEWS = ["mine", "status", "buy", "gear", "open", "todo"];
+const SHEET = { status: "Úkoly", buy: "Nákup", gear: "Přístroje", open: "Otevřené body" };
+const GEAR_FIELDS = [["Zkontrolováno / nabito", "Zkontrolováno"], ["Naloženo", "Naloženo"], ["Na místě", "Na místě"], ["Vráceno", "Vráceno"]];
+const TASK_STATES = ["Nezačato", "Rozpracováno", "Hotovo", "Zrušeno"];
+let P = {}, TY = {}, LAST = {};
+const state = { day: "all", view: "tasks", person: null, sel: null };
+const auth = { code: "", key: "", name: "" };
+try { Object.assign(auth, JSON.parse(localStorage.getItem("clt-auth") || "{}")); } catch (e) {}
+const narrow = window.matchMedia("(max-width: 700px)").matches;
+state.view = narrow ? "list" : "axis";
+let savedPerson = null;
+try { const s = JSON.parse(localStorage.getItem("clt-refresh") || "{}"); if (VIEWS.includes(s.view)) state.view = s.view; savedPerson = s.person || null; } catch (e) {}
+const tagDay = DAYS.find(d => d.tag === (location.hash || "").slice(1));
+if (tagDay) state.day = tagDay.key;
+
+const min = s => { if (!s) return null; const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+const pct = m => ((m - START) / SPAN * 100).toFixed(3) + "%";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function textOn(hex) {
+  const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 160 ? "#1B2226" : "#FFFFFF";
+}
+const splitWho = s => (s || "").split(/[,;+\/]/).map(x => x.trim()).filter(Boolean);
+
+function prep(d) {
+  d.buy = d.buy || []; d.gear = d.gear || []; d.open = d.open || []; d.log = d.log || [];
+  P = Object.fromEntries(d.people.map(p => [p.key, p]));
+  TY = Object.fromEntries(d.types.map(t => [t.name, t.color]));
+  d.tasks.forEach(t => {
+    t.f = min(t.from); t.t = min(t.to);
+    const parts = splitWho(t.who);
+    t.all = parts.includes("Všichni");
+    t.ppl = parts.filter(s => P[s]);
+    t.ext = parts.filter(s => !P[s] && s !== "Všichni" && s !== "—");
+    t.color = TY[t.type] || "#888888";
+    t.state = t.state || "Nezačato";
+  });
+  LAST = {};
+  d.log.forEach(l => { LAST[l.sheet + "|" + l.key] = l; });
+  DATA = d;
+  if (state.person && !P[state.person]) state.person = null;
+}
+prep(SNAPSHOT);
+if (P[savedPerson]) state.person = savedPerson;
+const involves = (t, k) => t.all || t.ppl.includes(k);
+const stCls = t => t.state === "Hotovo" ? " st-done" : t.state === "Zrušeno" ? " st-cancel" : "";
+const fmtT = t => t.f == null ? "čas ?" : (t.f === t.t ? t.from : `${t.from}–${t.to}`);
+const dayOf = k => DAYS.find(d => d.key === k);
+
+function save() { try { localStorage.setItem("clt-refresh", JSON.stringify({ view: state.view, person: state.person })); } catch (e) {} }
+
+function renderControls() {
+  const counts = Object.fromEntries(DAYS.map(d => [d.key, DATA.tasks.filter(t => t.date === d.key).length]));
+  document.getElementById("days").innerHTML =
+    `<button type="button" id="d-all" data-d="all" aria-pressed="${state.day === "all"}">Všechny dny</button>` +
+    DAYS.map(d => `<button type="button" id="d-${d.tag}" data-d="${d.key}" aria-pressed="${state.day === d.key}">${d.short}<small>${counts[d.key]}</small></button>`).join("");
+  document.querySelectorAll("#views button, #views2 button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.view)));
+  document.getElementById("row-days").hidden = CHECK_VIEWS.includes(state.view) && state.view !== "status";
+  document.getElementById("people").innerHTML =
+    `<button type="button" class="chip" id="p-all" data-p="" aria-pressed="${!state.person}"><i style="background:var(--muted)"></i>Všichni</button>` +
+    DATA.people.map(p => `<button type="button" class="chip" id="p-${esc(p.key)}" data-p="${esc(p.key)}" aria-pressed="${state.person === p.key}" title="${esc(p.full)}"><i style="background:${p.color}"></i>${esc(p.key)}</button>`).join("");
+}
+
+function whoChips(t) {
+  const out = [];
+  if (t.all) out.push(`<span style="background:var(--muted)">Všichni</span>`);
+  t.ppl.forEach(k => out.push(`<span style="background:${P[k].color}">${esc(k)}</span>`));
+  t.ext.forEach(s => out.push(`<span class="${s === "DOPLNIT" ? "miss" : "ext"}">${esc(s)}</span>`));
+  return out.join("");
+}
+
+function overlays(dayKey) {
+  let h = `<div class="dusk" style="left:${pct(DUSK)}"></div>`;
+  if (dayKey === "2026-11-05") h += `<div class="mk" style="left:${pct(675)}"></div>`;
+  const now = new Date(), iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const nm = now.getHours() * 60 + now.getMinutes();
+  if (iso === dayKey && nm >= START && nm <= END) h += `<div class="mk now" style="left:${pct(nm)}"><em>teď</em></div>`;
+  return h;
+}
+
+function patBg(type, c) {
+  const light = textOn(c) !== "#FFFFFF";
+  const L = light ? "rgba(0,0,0,.30)" : "rgba(255,255,255,.42)";
+  const rl = (deg, w = 2, gap = 7) => `repeating-linear-gradient(${deg}deg, ${L} 0 ${w}px, transparent ${w}px ${gap}px)`;
+  switch (type) {
+    case "Logistika": return `${rl(0)}, ${c}`;
+    case "Stavba": return `${rl(45)}, ${c}`;
+    case "Nátěr": return `${rl(-45)}, ${c}`;
+    case "Instrumentace": return `${rl(45, 2, 9)}, ${rl(-45, 2, 9)}, ${c}`;
+    case "Měření": return `${rl(90)}, ${c}`;
+    case "Hašení": return `radial-gradient(circle, ${L} 1.8px, transparent 2.3px) 0 0 / 8px 8px, ${c}`;
+    case "Úklid": return `${rl(0, 1, 8)}, ${rl(90, 1, 8)}, ${c}`;
+    case "Bezpečnost": return `${rl(45, 5, 11)}, ${c}`;
+    default: return c;
+  }
+}
+const txCls = c => textOn(c) === "#FFFFFF" ? "tx-l" : "tx-d";
+
+function axisDay(day) {
+  const all = DATA.tasks.filter(t => t.date === day.key);
+  const bars = all.filter(t => t.f != null && t.t > t.f);
+  const ms = all.filter(t => t.f != null && t.f === t.t);
+  const notime = all.filter(t => t.f == null);
+  const prio = t => (t.type === "Experiment" ? 0 : 1);
+  bars.sort((a, b) => a.f - b.f || prio(a) - prio(b) || (b.t - b.f) - (a.t - a.f));
+  const order = [0]; for (let i = 1; i <= 12; i++) order.push(i, -i);
+  const end = {}; const lane = {};
+  bars.forEach(t => { const l = order.find(k => (end[k] ?? -1) <= t.f); lane[t.id] = l; end[l] = t.t; });
+  const ls = Object.values(lane);
+  const ups = Math.max(0, ...ls), downs = Math.max(0, ...ls.map(x => -x));
+  const TOP = 24, LH = 24, GAP = 7, MH = 46;
+  const mainY = TOP + ups * (LH + GAP);
+  const yOf = l => l === 0 ? mainY + 4 : (l > 0 ? TOP + (ups - l) * (LH + GAP) : mainY + MH + GAP + (-l - 1) * (LH + GAP));
+  const H = mainY + MH + downs * (LH + GAP) + 10;
+  let h = "";
+  for (let hr = 7; hr <= 18; hr++) h += `<i class="ax-hr" style="left:${pct(hr * 60)}"></i><span class="ax-hl" style="left:${pct(hr * 60)}">${hr}<span class="mm">:00</span></span>`;
+  h += `<div class="ax-dusk" style="left:${pct(DUSK)};top:${TOP}px"></div>`;
+  h += `<div class="ax-main" style="top:${mainY}px;height:${MH}px"></div>`;
+  for (let l = 1; l <= ups; l++) h += `<i class="ax-lane" style="top:${yOf(l) + LH / 2}px"></i>`;
+  for (let l = 1; l <= downs; l++) h += `<i class="ax-lane" style="top:${yOf(-l) + LH / 2}px"></i>`;
+  if (day.key === "2026-11-05") h += `<div class="mk" style="left:${pct(675)};top:${TOP - 4}px"><em>ZAPÁLENÍ 11:15</em></div>`;
+  const now = new Date(), iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const nm = now.getHours() * 60 + now.getMinutes();
+  if (iso === day.key && nm >= START && nm <= END) h += `<div class="mk now" style="left:${pct(nm)};top:${TOP - 4}px"><em>teď</em></div>`;
+  bars.forEach(t => {
+    const l = lane[t.id], main = l === 0, ht = main ? MH - 8 : LH;
+    const dim = state.person && !involves(t, state.person) ? " dim" : "";
+    h += `<button type="button" class="ax-b ${main ? "" : "thin"} ${txCls(t.color)}${dim}${stCls(t)}" data-id="${t.id}" title="${esc(t.what)} · ${fmtT(t)} · ${esc(t.who)}" ` +
+      `style="left:${pct(t.f)};width:calc(${pct(START + (t.t - t.f))} - 2px);top:${yOf(l)}px;height:${ht}px;line-height:${ht}px;background:${patBg(t.type, t.color)};color:${textOn(t.color)}">${esc(t.what)}</button>`;
+  });
+  ms.forEach(t => { h += `<button type="button" class="ax-ms" data-id="${t.id}" style="left:${pct(t.f)};top:${mainY + MH / 2}px" title="${esc(t.what)} ${t.from}" aria-label="${esc(t.what)} ${t.from}"></button>`; });
+  const maxPar = (() => { let m = 0; for (let x = START; x < END; x += 15) m = Math.max(m, bars.filter(t => t.f <= x && t.t > x).length); return m; })();
+  return `<div class="scroller"><div class="axis" style="height:${H}px">${h}</div></div>` +
+    `<div class="ax-note">Nejvíc najednou: ${maxPar} ${maxPar === 1 ? "činnost" : (maxPar < 5 ? "činnosti" : "činností")}. Hlavní čára = první činnost, souběžné jsou na tenkých čarách nad a pod ní.` +
+    (notime.length ? ` Bez času: ${notime.map(t => esc(t.what)).join(", ")}.` : "") + `</div>`;
+}
+
+function bar(t, cls = "") {
+  if (t.f == null) return `<button type="button" class="notime" data-id="${t.id}">čas ?</button>`;
+  if (t.f === t.t) return `<button type="button" class="ms" data-id="${t.id}" style="left:${pct(t.f)}" aria-label="${esc(t.what)} ${t.from}" title="${esc(t.what)} ${t.from}"></button>`;
+  const sel = state.sel === t.id ? " sel" : "";
+  return `<button type="button" class="b${cls}${sel}${stCls(t)}" data-id="${t.id}" style="left:${pct(t.f)};width:calc(${pct(START + (t.t - t.f))} - 2px);background:${patBg(t.type, t.color)};color:${textOn(t.color)}" title="${esc(t.what)} · ${fmtT(t)}"><span class="${txCls(t.color)}">${esc(t.what)}</span></button>`;
+}
+
+function hdrRow(label, dayKey) {
+  let hrs = "";
+  for (let h = 7; h <= 18; h++) hrs += `<span class="hr" style="left:${pct(h * 60)}">${h}<span class="mm">:00</span></span>`;
+  let mk = "";
+  if (dayKey === "2026-11-05") mk = `<div class="mk" style="left:${pct(675)}"><em>ZAPÁLENÍ 11:15</em></div>`;
+  return `<div class="r hdr"><div class="lab">${label}</div><div class="trk">${hrs}${mk}</div></div>`;
+}
+
+function taskRows(day) {
+  const ts = DATA.tasks.filter(t => t.date === day.key).sort((a, b) => (a.f ?? -1) - (b.f ?? -1));
+  return hdrRow("Činnost", day.key) + ts.map(t => {
+    const dim = state.person && !involves(t, state.person) ? " dim" : "";
+    return `<div class="r${dim}"><div class="lab"><span class="t">${fmtT(t)}</span><span class="n">${esc(t.what)}</span><span class="who">${whoChips(t)}</span></div>` +
+      `<div class="trk">${overlays(day.key)}<div style="position:absolute;inset:8px 0 0 0">${bar(t)}</div></div></div>`;
+  }).join("");
+}
+
+function lanes(list) {
+  const ends = [];
+  return list.map(t => {
+    const s = t.f ?? START, e = t.t ?? s;
+    let i = ends.findIndex(x => x <= s);
+    if (i < 0) { i = ends.length; ends.push(0); }
+    ends[i] = Math.max(e, s + 1);
+    return { t, lane: i };
+  });
+}
+
+function personRows(day) {
+  const ts = DATA.tasks.filter(t => t.date === day.key).sort((a, b) => (a.f ?? -1) - (b.f ?? -1));
+  const shared = ts.filter(t => t.ppl.length === 0);
+  const rows = [];
+  if (shared.length) rows.push({ key: null, name: "Společné a externí", color: "var(--muted)", list: shared, bg: [] });
+  DATA.people.forEach(p => {
+    const own = ts.filter(t => t.ppl.includes(p.key));
+    if (own.length) rows.push({ key: p.key, name: p.key, full: p.full, color: p.color, list: own, bg: ts.filter(t => t.all) });
+  });
+  return hdrRow("Osoba", day.key) + rows.map(r => {
+    const L = lanes(r.list), n = Math.max(1, ...L.map(x => x.lane + 1));
+    const dim = state.person && r.key !== state.person ? " dim" : "";
+    const bars = L.map(({ t, lane }) => `<div style="position:absolute;left:0;right:0;top:${8 + lane * 32}px">${bar(t)}</div>`).join("");
+    const bgs = r.bg.map(t => `<div style="position:absolute;left:0;right:0;top:8px">${bar(t, " bg")}</div>`).join("");
+    return `<div class="r${dim}"><div class="lab person"><i style="background:${r.color}"></i><span><span class="n">${esc(r.name)}</span>${r.full ? `<br><span class="t">${esc(r.full)}</span>` : ""}</span></div>` +
+      `<div class="trk" style="min-height:${16 + n * 32}px">${overlays(day.key)}${bgs}${bars}</div></div>`;
+  }).join("");
+}
+
+function listRows(day) {
+  const ts = DATA.tasks.filter(t => t.date === day.key).sort((a, b) => (a.f ?? -1) - (b.f ?? -1));
+  return `<ol class="ag">` + ts.map(t => {
+    const dim = state.person && !involves(t, state.person) ? " dim" : "";
+    let span = "";
+    if (t.f != null && t.t > t.f) span = `<i class="ag-span" style="left:${pct(t.f)};width:${pct(START + (t.t - t.f))};background:${patBg(t.type, t.color)}"></i>`;
+    else if (t.f != null) span = `<i class="ag-pt" style="left:${pct(t.f)}"></i>`;
+    const mk = day.key === "2026-11-05" ? `<i class="ag-mk" style="left:${pct(675)}"></i>` : "";
+    return `<li class="ag-i${dim}"><button type="button" data-id="${t.id}" style="border-left-color:${t.color}">` +
+      `<span class="ag-t">${fmtT(t)}</span><span class="ag-n">${esc(t.what)}</span>` +
+      `<span class="ag-who who">${whoChips(t)}</span>` +
+      `<span class="ag-trk" aria-hidden="true"><i class="ag-dusk" style="left:${pct(DUSK)}"></i>${mk}${span}</span></button></li>`;
+  }).join("") + `</ol>`;
+}
+
+function renderPlan() {
+  const el = document.getElementById("plan");
+  if (!state.person) { el.hidden = true; el.innerHTML = ""; return; }
+  const p = P[state.person];
+  const ts = DATA.tasks.filter(t => involves(t, p.key)).sort((a, b) => a.date.localeCompare(b.date) || (a.f ?? -1) - (b.f ?? -1));
+  el.hidden = false;
+  el.innerHTML = `<h3><i style="background:${p.color}"></i>${esc(p.full)}</h3>
+    <div class="t" style="color:var(--muted);font-size:13px">Osobní plán · ${ts.filter(t => !t.all).length} vlastních úkolů + ${ts.filter(t => t.all).length} společné</div>
+    <ol>${ts.map(t => `<li class="${t.all ? "all" : ""}"><span class="dt"><span class="d">${dayOf(t.date).short}</span><span class="t">${fmtT(t)}</span></span><span class="w">${esc(t.what)}${t.all ? " (všichni)" : ""}</span></li>`).join("")}</ol>`;
+}
+
+// ---------------------------------------------------------------- checklists
+const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+const shortDate = s => isDate(s) ? `${+s.slice(8, 10)}. ${+s.slice(5, 7)}.` : "";
+const fmtAt = s => { const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})/.exec(s || ""); return m ? `${+m[3]}. ${+m[2]}. ${m[4]}` : (s || ""); };
+const nowIso = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")} ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`; };
+const overdue = t => !["Hotovo", "Zrušeno"].includes(t.state) && `${t.date} ${t.to || t.from}` < nowIso();
+const pplOf = s => splitWho(s).filter(x => P[x]);
+const has = (s, k) => pplOf(s).includes(k);
+const gearPeople = g => [...new Set([...pplOf(g.op), ...pplOf(g.carrier)])];
+const canWrite = () => LIVE && !!auth.code;
+
+function chips(keys) {
+  return keys.map(k => `<span style="background:${P[k].color}">${esc(k)}</span>`).join("");
+}
+function lastLine(sheet, key) {
+  const l = LAST[sheet + "|" + key];
+  if (!l) return "";
+  return `<span class="last">${esc(l.field)}: ${esc(l.value)} · ${esc(l.name || l.who)} · ${esc(fmtAt(l.at))}</span>`;
+}
+function box(sheet, key, name, field, label, on) {
+  if (!canWrite()) return `<span class="badge${on ? " on" : ""}">${on ? "✓" : "–"} ${esc(label)}</span>`;
+  return `<label class="${on ? "on" : ""}"><input type="checkbox" data-set="${esc(sheet)}" data-key="${esc(key)}" data-name="${esc(name)}" data-field="${esc(field)}"${on ? " checked" : ""}>${esc(label)}</label>`;
+}
+function stateSel(t) {
+  if (!canWrite()) return `<span class="badge${t.state === "Hotovo" ? " on" : ""}">${esc(t.state)}</span>`;
+  return `<select aria-label="Stav úkolu ${esc(t.what)}" data-set="Úkoly" data-key="${esc(t.id)}" data-name="${esc(t.what)}" data-field="Stav">` +
+    TASK_STATES.map(s => `<option${s === t.state ? " selected" : ""}>${s}</option>`).join("") + `</select>`;
+}
+
+function taskItem(t, showDay) {
+  const cls = t.state === "Hotovo" ? " done" : t.state === "Rozpracováno" ? " part" : t.state === "Zrušeno" ? " cancel" : "";
+  const late = overdue(t) ? ` <b style="color:var(--ember)">po termínu</b>` : "";
+  return `<li class="ck${cls}"><div><div class="nm"><span class="t">${showDay ? dayOf(t.date)?.short + " · " : ""}${fmtT(t)}</span>${esc(t.what)}</div>` +
+    `<div class="who">${whoChips(t)}</div>${t.detail ? `<div class="sub">${esc(t.detail)}</div>` : ""}<div class="sub">${esc(t.state)}${late}</div>${lastLine("Úkoly", t.id)}</div>` +
+    `<div class="tg">${stateSel(t)}</div></li>`;
+}
+function buyItem(b) {
+  const on = b.Koupeno === "ano";
+  return `<li class="ck${on ? " done" : ""}"><div><div class="nm">${esc(b.name)}</div>` +
+    `<div class="sub">${esc([b.qty && b.qty + " " + b.unit, b.spec].filter(Boolean).join(" · "))}</div>` +
+    `<div class="sub">${esc(b.act)}${b.need ? " · potřeba k " + shortDate(b.need) : ""}${b.who ? " · kupuje " + esc(b.who) : ""}</div>` +
+    `${b.note ? `<div class="sub">${esc(b.note)}</div>` : ""}${lastLine("Nákup", b.n)}</div>` +
+    `<div class="tg">${box("Nákup", b.n, b.name, "Koupeno", "Koupeno", on)}</div></li>`;
+}
+function gearItem(g) {
+  const n = GEAR_FIELDS.filter(([f]) => g[f] === "ano").length;
+  const cls = g["Vráceno"] === "ano" || g["Na místě"] === "ano" ? " done" : n ? " part" : "";
+  const ppl = gearPeople(g);
+  return `<li class="ck${cls}"><div><div class="nm">${esc(g.name)}</div>` +
+    `<div class="sub">${esc(g.act)}${g.need ? " · od " + shortDate(g.need) : ""}</div>` +
+    `<div class="sub">Obsluha: ${esc(g.op || "—")}${g.carrier ? " · veze: " + esc(g.carrier) : ""}</div>` +
+    `${ppl.length ? `<div class="who">${chips(ppl)}</div>` : ""}${g.note ? `<div class="sub">${esc(g.note)}</div>` : ""}${lastLine("Přístroje", g.n)}</div>` +
+    `<div class="tg">${GEAR_FIELDS.map(([f, l]) => box("Přístroje", g.n, g.name, f, l, g[f] === "ano")).join("")}</div></li>`;
+}
+function openItem(o) {
+  const on = o.Stav === "Vyřešeno";
+  return `<li class="ck${on ? " done" : ""}"><div><div class="nm">${esc(o.area)}</div><div class="sub" style="color:var(--ink)">${esc(o.text)}</div>` +
+    `<div class="sub">Rozhodne: ${esc(o.owner)}${o.why ? " · " + esc(o.why) : ""}</div>${lastLine("Otevřené body", o.n)}</div>` +
+    `<div class="tg">${box("Otevřené body", o.n, o.text, "Stav", "Vyřešeno", on)}</div></li>`;
+}
+const dimIf = (html, on) => on ? html.replace('class="ck', 'class="ck dim') : html;
+
+function hint() { return ""; }
+
+function viewStatus() {
+  const days = state.day === "all" ? DAYS : DAYS.filter(d => d.key === state.day);
+  const ts = DATA.tasks.filter(t => days.some(d => d.key === t.date));
+  const done = ts.filter(t => t.state === "Hotovo").length;
+  return `<div class="ck-h"><h2>Stav úkolů</h2><span class="sum">hotovo ${done} / ${ts.length}</span></div>${hint()}` +
+    days.map(d => {
+      const list = ts.filter(t => t.date === d.key);
+      return `<div class="ck-h"><h3>${d.long}</h3><span class="sum">${list.filter(t => t.state === "Hotovo").length} / ${list.length}</span></div><ol class="ck-list">` +
+        list.map(t => dimIf(taskItem(t), state.person && !involves(t, state.person))).join("") + `</ol>`;
+    }).join("");
+}
+function viewBuy() {
+  const done = DATA.buy.filter(b => b.Koupeno === "ano").length;
+  return `<div class="ck-h"><h2>Nákup</h2><span class="sum">koupeno ${done} / ${DATA.buy.length} · vše na fakturu</span></div>${hint()}` +
+    `<ol class="ck-list">${DATA.buy.map(b => dimIf(buyItem(b), state.person && !has(b.who, state.person))).join("")}</ol>`;
+}
+function viewGear() {
+  const secs = [...new Set(DATA.gear.map(g => g.sec))];
+  const onSite = DATA.gear.filter(g => g["Na místě"] === "ano").length;
+  return `<div class="ck-h"><h2>Přístroje a vybavení</h2><span class="sum">na místě ${onSite} / ${DATA.gear.length}</span></div>${hint()}` +
+    secs.map(s => {
+      const list = DATA.gear.filter(g => g.sec === s);
+      return `<div class="ck-h"><h3>${esc(s || "Přístroje")}</h3><span class="sum">${list.length} položek</span></div><ol class="ck-list">` +
+        list.map(g => dimIf(gearItem(g), state.person && !gearPeople(g).includes(state.person))).join("") + `</ol>`;
+    }).join("");
+}
+function viewOpen() {
+  const open = DATA.open.filter(o => o.Stav !== "Vyřešeno").length;
+  return `<div class="ck-h"><h2>Otevřené body</h2><span class="sum">otevřeno ${open} / ${DATA.open.length}</span></div>${hint()}` +
+    `<ol class="ck-list">${DATA.open.map(o => dimIf(openItem(o), state.person && !has(o.owner, state.person))).join("")}</ol>`;
+}
+function viewMine() {
+  if (!state.person) return `<div class="ck-h"><h2>Moje věci</h2></div><p class="ro">Vyber níže v řádku Osoba svoje jméno. Uvidíš svoje úkoly, přístroje, nákup a otevřené body na jednom místě.</p>`;
+  const k = state.person, p = P[k];
+  const ts = DATA.tasks.filter(t => t.ppl.includes(k));
+  const gs = DATA.gear.filter(g => gearPeople(g).includes(k));
+  const bs = DATA.buy.filter(b => has(b.who, k));
+  const os = DATA.open.filter(o => has(o.owner, k));
+  const sec = (title, sum, items) => items ? `<div class="ck-h"><h3>${title}</h3><span class="sum">${sum}</span></div><ol class="ck-list">${items}</ol>` : "";
+  return `<div class="ck-h"><h2>${esc(p.full)}</h2><span class="sum">moje věci</span></div>${hint()}` +
+    sec("Úkoly", `hotovo ${ts.filter(t => t.state === "Hotovo").length} / ${ts.length}`, ts.map(t => taskItem(t, true)).join("")) +
+    sec("Přístroje a vybavení (obsluha nebo vezu)", `na místě ${gs.filter(g => g["Na místě"] === "ano").length} / ${gs.length}`, gs.map(gearItem).join("")) +
+    sec("Nákup", `koupeno ${bs.filter(b => b.Koupeno === "ano").length} / ${bs.length}`, bs.map(buyItem).join("")) +
+    sec("Otevřené body", `otevřeno ${os.filter(o => o.Stav !== "Vyřešeno").length}`, os.map(openItem).join("")) +
+    `<p class="ro">Společné úkoly „Všichni“ tu nejsou, najdeš je v Osa nebo Seznam.</p>`;
+}
+function viewTodo() {
+  const rows = DATA.people.map(p => {
+    const k = p.key;
+    const ts = DATA.tasks.filter(t => t.ppl.includes(k) && !["Hotovo", "Zrušeno"].includes(t.state));
+    const late = ts.filter(overdue);
+    const gs = DATA.gear.filter(g => gearPeople(g).includes(k) && g["Na místě"] !== "ano" && g["Vráceno"] !== "ano");
+    const bs = DATA.buy.filter(b => has(b.who, k) && b.Koupeno !== "ano");
+    const os = DATA.open.filter(o => has(o.owner, k) && o.Stav !== "Vyřešeno");
+    return { p, ts, late, gs, bs, os, n: ts.length + gs.length + bs.length + os.length };
+  }).filter(r => r.n).sort((a, b) => b.late.length - a.late.length || b.n - a.n);
+  const tot = DATA.tasks.filter(overdue).length;
+  const li = (txt, red) => `<li${red ? ' class="late"' : ""}>${txt}</li>`;
+  const cap = (arr, fn, label) => arr.length > 5 ? arr.slice(0, 4).map(fn).join("") + li(`${label}: dalších ${arr.length - 4}`) : arr.map(fn).join("");
+  return `<div class="ck-h"><h2>Nesplněno</h2><span class="sum">úkolů po termínu ${tot} · stav ${esc(fmtAt(DATA.at || ""))}</span></div>` +
+    `<p class="ro">Kdo má co nehotové. Červeně = čas úkolu už uběhl a není hotový. Klepni na jméno a uvidíš detail v Moje věci.</p>` +
+    rows.map(r => `<div class="todo"><div class="todo-h"><i style="background:${r.p.color}"></i><button type="button" class="btn" data-mine="${esc(r.p.key)}">${esc(r.p.full)}</button>` +
+      `<span class="sum">úkoly ${r.ts.length}${r.late.length ? ` (po termínu ${r.late.length})` : ""} · přístroje ${r.gs.length} · nákup ${r.bs.length} · body ${r.os.length}</span></div>` +
+      `<ul>` +
+      r.late.map(t => li(`${dayOf(t.date)?.short} ${fmtT(t)} – ${esc(t.what)}`, true)).join("") +
+      cap(r.ts.filter(t => !overdue(t)), t => li(`${dayOf(t.date)?.short} ${fmtT(t)} – ${esc(t.what)}`), "Úkoly") +
+      cap(r.gs, g => li(`Přístroj: ${esc(g.name)}${g.need ? " (od " + shortDate(g.need) + ")" : ""}`), "Přístroje") +
+      cap(r.bs, b => li(`Koupit: ${esc(b.name)}`), "Koupit") +
+      cap(r.os, o => li(`Rozhodnout: ${esc(o.area)} – ${esc(o.text)}`), "Body") + `</ul></div>`).join("") +
+    (rows.length ? "" : `<p class="ro">Nikdo nemá nic nesplněného.</p>`);
+}
+
+function render() {
+  if (CHECK_VIEWS.includes(state.view)) {
+    const f = { mine: viewMine, status: viewStatus, buy: viewBuy, gear: viewGear, open: viewOpen, todo: viewTodo }[state.view];
+    document.getElementById("board").innerHTML = f();
+    renderControls();
+    document.getElementById("plan").hidden = true;
+    return;
+  }
+  const days = state.day === "all" ? DAYS : DAYS.filter(d => d.key === state.day);
+  document.getElementById("board").innerHTML = days.map(d => {
+    const n = DATA.tasks.filter(t => t.date === d.key).length;
+    return `<section class="day" id="sec-${d.tag}"><div class="day-h"><h2>${d.long}</h2><span class="sub">${d.sub} · ${n} úkolů</span></div>` +
+      (state.view === "axis" ? axisDay(d) : state.view === "list" ? listRows(d) : `<div class="scroller"><div class="grid">${state.view === "people" ? personRows(d) : taskRows(d)}</div></div>`) + `</section>`;
+  }).join("");
+  renderControls();
+  renderPlan();
+}
+
+function showSheet(id) {
+  const t = DATA.tasks.find(x => x.id === id), el = document.getElementById("sheet");
+  if (!t) return;
+  state.sel = id;
+  const who = [t.all ? "Všichni" : "", ...t.ppl.map(k => P[k].full), ...t.ext].filter(Boolean).join(", ") || "—";
+  const rows = [["Kdy", `${dayOf(t.date).long} · ${fmtT(t)}`], ["Typ", `<span class="typ" style="width:22px;height:12px;background:${patBg(t.type, t.color)}"></span>${esc(t.type)}`],
+    ["Kdo", esc(who)], ["Detail", esc(t.detail)], ["Vybavení", esc(t.gear)], ["Poznámka", esc(t.note)],
+    ["Stav", `<span class="tg" style="justify-content:flex-start">${stateSel(t)}</span>`], ["Změna", lastLine("Úkoly", t.id)]].filter(r => r[1]);
+  el.innerHTML = `<button type="button" class="x" id="sheet-close" aria-label="Zavřít">×</button><span class="k">${t.id}</span><h3>${esc(t.what)}</h3>` +
+    `<dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+  el.hidden = false;
+  render();
+}
+function hideSheet() { document.getElementById("sheet").hidden = true; state.sel = null; render(); }
+
+document.addEventListener("click", e => {
+  const mi = e.target.closest("[data-mine]");
+  if (mi) { state.person = mi.dataset.mine; state.view = "mine"; save(); render(); window.scrollTo(0, 0); return; }
+  if (e.target.closest("[data-set]") || e.target.closest(".tg")) return;
+  if (e.target.closest("#auth")) return;
+  const b = e.target.closest("[data-id]");
+  if (b) return showSheet(b.dataset.id);
+  if (e.target.closest("#sheet-close")) return hideSheet();
+  const d = e.target.closest("[data-d]");
+  if (d) { state.day = d.dataset.d; return render(); }
+  const v = e.target.closest("[data-v]");
+  if (v) { state.view = v.dataset.v; save(); return render(); }
+  const p = e.target.closest("[data-p]");
+  if (p) { state.person = p.dataset.p || null; save(); return render(); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.getElementById("sheet").hidden) hideSheet(); });
+
+
+// ---------------------------------------------------------------- live data, kódy, zápis
+const $ = id => document.getElementById(id);
+let toastT = null, lastJson = "", liveState = LIVE ? "load" : "static", liveAt = SNAPSHOT.at || "";
+function toast(msg) {
+  const el = $("toast"); el.textContent = msg; el.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 3800);
+}
+function renderLive() {
+  const el = $("live"), txt = el.querySelector("span");
+  el.className = "live" + (liveState === "ok" ? " ok" : liveState === "off" ? " off" : "");
+  txt.textContent = liveState === "ok" ? `živě z tabulky · ${fmtAt(liveAt)}`
+    : liveState === "off" ? `bez spojení · poslední stav ${fmtAt(liveAt)}`
+    : liveState === "load" ? "načítám z tabulky…" : `snímek ${fmtAt(liveAt)}`;
+  const a = $("auth");
+  if (!LIVE) { a.innerHTML = ""; return; }
+  a.innerHTML = auth.code
+    ? `<span>Odškrtáváš jako <span class="me">${esc(auth.name || auth.key)}</span></span><button type="button" class="btn" id="logout">Odhlásit</button>`
+    : `<span class="ro">Divácký režim</span>`;
+}
+function srcNote() {
+  $("src-note").textContent = LIVE
+    ? "Data jsou z Google tabulky. Hodnoty mění jen správci tabulky. Odškrtávat může jen ten, kdo dostal osobní odkaz. Každá změna se zapisuje do tabulky i s tím, kdo ji udělal."
+    : "Stránka je kopie Excelu CLT_REFRESH_harmonogram.xlsx. Změny se dělají v Excelu (list Úkoly).";
+}
+function apply(d) {
+  const j = JSON.stringify(d);
+  liveAt = d.at || liveAt;
+  if (j === lastJson) return false;
+  lastJson = j;
+  prep(JSON.parse(j));
+  return true;
+}
+async function refresh() {
+  if (!LIVE) return;
+  try {
+    const r = await fetch(CONFIG.api, { cache: "no-store" });
+    const d = await r.json();
+    if (!d || !Array.isArray(d.tasks)) throw new Error("bad");
+    liveState = "ok";
+    try { localStorage.setItem("clt-live", JSON.stringify(d)); } catch (e) {}
+    if (apply(d) && !document.querySelector("select:focus")) { $("meta").textContent = metaText(); render(); }
+  } catch (e) {
+    liveState = "off";
+  }
+  renderLive();
+}
+async function post(body) {
+  const r = await fetch(CONFIG.api, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+  return r.json();
+}
+function logout(msg) {
+  auth.code = auth.key = auth.name = "";
+  try { localStorage.removeItem("clt-auth"); } catch (e) {}
+  render(); renderLive();
+  if (msg) toast(msg);
+}
+async function loginFromHash() {
+  const m = /(?:^|[#&])k=([A-Za-z0-9]{8,32})/.exec(location.hash || "");
+  if (!m || !LIVE) return;
+  const code = m[1].toUpperCase();
+  history.replaceState(null, "", location.pathname + location.search);
+  try {
+    const r = await post({ action: "whoami", code });
+    if (!r.ok) return toast("Tenhle osobní odkaz neplatí. Napiš o nový.");
+    const first = !auth.code;
+    Object.assign(auth, { code, key: r.key, name: r.name });
+    try { localStorage.setItem("clt-auth", JSON.stringify(auth)); } catch (e) {}
+    if (first && P[r.key]) { state.person = r.key; state.view = "mine"; save(); }
+    render(); renderLive();
+    toast(`Přihlášeno: ${r.name}. Zůstaneš přihlášený i příště.`);
+  } catch (e) { toast("Přihlášení se nepovedlo, zkus odkaz otevřít znovu se signálem."); }
+}
+function findItem(sheet, key) {
+  if (sheet === "Úkoly") return DATA.tasks.find(t => t.id === key);
+  const list = { "Nákup": DATA.buy, "Přístroje": DATA.gear, "Otevřené body": DATA.open }[sheet];
+  return list && list.find(x => String(x.n) === String(key));
+}
+const ERR = { bad_code: "Tvůj kód už neplatí. Napiš o nový odkaz.", item_changed: "Položka se mezitím v tabulce změnila. Načítám znovu.",
+  item_not_found: "Položka v tabulce není. Načítám znovu.", busy: "Tabulka je zrovna zaneprázdněná, zkus to za chvíli.",
+  field_not_allowed: "Tohle pole se z webu měnit nedá.", value_not_allowed: "Tahle hodnota není povolená." };
+async function setField(el) {
+  const sheet = el.dataset.set, key = el.dataset.key, field = el.dataset.field, name = el.dataset.name;
+  const value = el.type === "checkbox" ? (el.checked ? (sheet === "Otevřené body" ? "Vyřešeno" : "ano") : (sheet === "Otevřené body" ? "Otevřeno" : "ne")) : el.value;
+  const it = findItem(sheet, key);
+  if (!it || !canWrite()) return render();
+  if (!navigator.onLine) { toast("Bez signálu nejde ukládat. Zkus to, až bude spojení."); return render(); }
+  const prev = it[field === "Stav" && sheet === "Úkoly" ? "state" : field];
+  const set = v => { if (sheet === "Úkoly") it.state = v; else it[field] = v; };
+  set(value); render();
+  try {
+    const r = await post({ action: "set", code: auth.code, sheet, key, field, value, name });
+    if (!r.ok) {
+      set(prev); render();
+      if (r.error === "bad_code") return logout(ERR.bad_code);
+      toast(ERR[r.error] || "Uložení se nepovedlo.");
+      if (r.error === "item_changed" || r.error === "item_not_found") refresh();
+      return;
+    }
+    DATA.log.push({ at: r.at, who: r.key, name: r.name, sheet, key: String(key), field, value });
+    LAST[sheet + "|" + key] = DATA.log[DATA.log.length - 1];
+    render();
+    toast(`Uloženo do tabulky: ${field} → ${value}`);
+  } catch (e) {
+    set(prev); render(); toast("Uložení se nepovedlo, zkontroluj signál.");
+  }
+}
+document.addEventListener("change", e => { const el = e.target.closest("[data-set]"); if (el) setField(el); });
+document.addEventListener("click", e => { if (e.target.closest("#logout")) logout("Odhlášeno. Teď jsi v diváckém režimu."); });
+if (LIVE) {
+  try { const c = JSON.parse(localStorage.getItem("clt-live") || "null"); if (c && Array.isArray(c.tasks)) { apply(c); liveState = "off"; } } catch (e) {}
+  setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
+}
+const metaText = () => `Po 2. – Čt 5. 11. 2026 · Chlebovice (ověřit) · ${DATA.tasks.length} úkolů · ${DATA.people.length} osob`;
+document.getElementById("lead").textContent = `Hlavní řešitelka: ${DATA.lead}`;
+document.getElementById("meta").textContent = metaText();
+document.getElementById("legend").innerHTML = DATA.types.filter(t => t.name !== "Milník").map(t => `<span><i style="background:${patBg(t.name, t.color)}"></i>${esc(t.name)}</span>`).join("") +
+  `<span><i style="background:var(--ink);width:10px;height:10px;transform:rotate(45deg)"></i>Milník</span>` +
+  `<span><i class="dk"></i>po západu slunce</span><span><i style="background:transparent;border-left:2px solid var(--ember);width:6px"></i>start experimentu</span>`;
+srcNote();
+render();
+renderLive();
+loginFromHash().then(refresh);
+window.addEventListener("hashchange", () => { loginFromHash(); });
+</script>
+</body></html>
