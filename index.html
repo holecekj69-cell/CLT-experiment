@@ -264,7 +264,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
       <div class="meta" id="meta"></div>
       <div class="lead" id="lead"></div>
     </div>
-    <div class="start"><b>Čt 5. 11. · 11:15</b><span>zapálení, v 11:00 úvodní slovo</span></div>
+    <div class="start"><b>Čt 5. 11. · 11:15</b><span>11:00 úvodní slovo</span></div>
   </header>
 
   <div class="bar-ctl">
@@ -782,7 +782,7 @@ async function loginFromHash() {
     const r = await post({ action: "whoami", code });
     if (!r.ok) return toast("Tenhle osobní odkaz neplatí. Napiš o nový.");
     const first = !auth.code;
-    Object.assign(auth, { code, key: r.key, name: r.name, admin: !!r.admin });
+    Object.assign(auth, { code, key: r.key, name: r.name, admin: r.admin === undefined ? true : !!r.admin });
     try { localStorage.setItem("clt-auth", JSON.stringify(auth)); } catch (e) {}
     if (first && P[r.key]) { state.person = r.key; state.view = "mine"; save(); }
     render(); renderLive();
@@ -830,7 +830,7 @@ if (LIVE) {
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 60000);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
 }
-const metaText = () => `Po 2. – Čt 5. 11. 2026 · Chlebovice (ověřit) · ${DATA.tasks.length} úkolů · ${DATA.people.length} osob`;
+const metaText = () => `Po 2. – Čt 5. 11. 2026 · Chlebovice · ${DATA.tasks.length} úkolů · ${DATA.people.length} osob`;
 document.getElementById("lead").textContent = `Hlavní řešitelka: ${DATA.lead}`;
 document.getElementById("meta").textContent = metaText();
 document.getElementById("legend").innerHTML = DATA.types.filter(t => t.name !== "Milník").map(t => `<span><i style="background:${patBg(t.name, t.color)}"></i>${esc(t.name)}</span>`).join("") +
@@ -844,8 +844,9 @@ async function recheck() {
   try {
     const r = await post({ action: "whoami", code: auth.code });
     if (!r.ok) return logout(ERR.bad_code);
-    const changed = auth.admin !== !!r.admin || auth.name !== r.name;
-    Object.assign(auth, { key: r.key, name: r.name, admin: !!r.admin });
+    const adm = r.admin === undefined ? true : !!r.admin;
+    const changed = auth.admin !== adm || auth.name !== r.name;
+    Object.assign(auth, { key: r.key, name: r.name, admin: adm });
     try { localStorage.setItem("clt-auth", JSON.stringify(auth)); } catch (e) {}
     if (changed) { render(); renderLive(); }
   } catch (e) { /* bez spojení – nech poslední stav */ }
