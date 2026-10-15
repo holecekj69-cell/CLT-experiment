@@ -581,7 +581,7 @@ function gearItem(g) {
   const ppl = gearPeople(g);
   return `<li class="ck${cls}"><div><div class="nm">${esc(g.name)}</div>` +
     `<div class="sub">${esc(g.act)}${g.need ? " · od " + shortDate(g.need) : ""}</div>` +
-    `<div class="sub">Obsluha: ${esc(g.op || "—")}${g.carrier ? " · veze: " + esc(g.carrier) : ""}</div>` +
+    `<div class="sub">Obsluha: ${esc(g.op || "—")}${g.carrier ? " · zajistí: " + esc(g.carrier) : ""}</div>` +
     `${ppl.length ? `<div class="who">${chips(ppl)}</div>` : ""}${g.note ? `<div class="sub">${esc(g.note)}</div>` : ""}${lastLine("Přístroje", g.n)}</div>` +
     `<div class="tg">${GEAR_FIELDS.map(([f, l]) => box("Přístroje", g.n, g.name, f, l, g[f] === "ano", canEdit("Přístroje", g))).join("")}</div></li>`;
 }
@@ -636,7 +636,7 @@ function viewMine() {
   const sec = (title, sum, items) => items ? `<div class="ck-h"><h3>${title}</h3><span class="sum">${sum}</span></div><ol class="ck-list">${items}</ol>` : "";
   return `<div class="ck-h"><h2>${esc(p.full)}</h2><span class="sum">moje věci</span></div>${hint()}` +
     sec("Úkoly", `hotovo ${ts.filter(t => t.state === "Hotovo").length} / ${ts.length}`, ts.map(t => taskItem(t, true)).join("")) +
-    sec("Přístroje a vybavení (obsluha nebo vezu)", `na místě ${gs.filter(g => g["Na místě"] === "ano").length} / ${gs.length}`, gs.map(gearItem).join("")) +
+    sec("Přístroje a vybavení (obsluhuji nebo zajišťuji)", `na místě ${gs.filter(g => g["Na místě"] === "ano").length} / ${gs.length}`, gs.map(gearItem).join("")) +
     sec("Nákup", `koupeno ${bs.filter(b => b.Koupeno === "ano").length} / ${bs.length}`, bs.map(buyItem).join("")) +
     sec("Otevřené body", `otevřeno ${os.filter(o => o.Stav !== "Vyřešeno").length}`, os.map(openItem).join("")) +
     `<p class="ro">Společné úkoly „Všichni“ tu nejsou, najdeš je v Osa nebo Seznam.</p>`;
