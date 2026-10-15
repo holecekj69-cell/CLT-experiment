@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0B2335"><style>[hidden]{display:none!important}body{margin:0}</style><script src="config.js"></script><title>CLT REFRESH</title>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0B2335"><style>[hidden]{display:none!important}body{margin:0}</style><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" type="image/png" href="icon-192.png"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="CLT REFRESH"><script src="config.js"></script><title>CLT REFRESH</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -203,6 +203,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
   padding: calc(6px + env(safe-area-inset-top, 0px)) 0 6px; background: var(--bg); border-bottom: 1px solid var(--line); font-size: 13px; }
 .status .auth { margin-left: auto; }
 .status .btn { min-height: 32px; }
+.code-in { font: inherit; font-size: 14px; min-height: 32px; width: 12.5em; padding: 4px 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 @media (max-width: 640px) { .status { font-size: 12px; } .status .auth .lbl-long { display: none; } }
 .live { font-family: var(--f-mono); font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
@@ -719,6 +720,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.
 
 // ---------------------------------------------------------------- live data, kódy, zápis
 const $ = id => document.getElementById(id);
+let codeForm = false;
 let toastT = null, lastJson = "", liveState = LIVE ? "load" : "static", liveAt = SNAPSHOT.at || "";
 function toast(msg) {
   const el = $("toast"); el.textContent = msg; el.hidden = false;
@@ -734,7 +736,9 @@ function renderLive() {
   if (!LIVE) { a.innerHTML = ""; return; }
   a.innerHTML = auth.code
     ? `<span><span class="lbl-long">Odškrtáváš jako </span><span class="me">${esc(auth.name || auth.key)}</span>${auth.admin ? " · správce" : ""}</span><button type="button" class="btn" id="logout">Odhlásit</button>`
-    : `<span class="ro">Divácký režim</span>`;
+    : codeForm
+      ? `<form id="code-form" class="auth"><input id="code-in" class="code-in" autocomplete="off" autocapitalize="characters" placeholder="kód nebo osobní odkaz" aria-label="Kód nebo osobní odkaz"><button type="submit" class="btn">Přihlásit</button><button type="button" class="btn" id="code-cancel">Zrušit</button></form>`
+      : `<span class="ro">Divácký režim</span><button type="button" class="btn" id="code-btn">Mám kód</button>`;
 }
 function srcNote() {
   $("src-note").textContent = LIVE
@@ -773,21 +777,26 @@ function logout(msg) {
   render(); renderLive();
   if (msg) toast(msg);
 }
-async function loginFromHash() {
-  const m = /(?:^|[#&])k=([A-Za-z0-9]{8,32})/.exec(location.hash || "");
-  if (!m || !LIVE) return;
-  const code = m[1].toUpperCase();
-  history.replaceState(null, "", location.pathname + location.search);
+async function loginWithCode(code) {
+  code = String(code || "").toUpperCase();
   try {
     const r = await post({ action: "whoami", code });
-    if (!r.ok) return toast("Tenhle osobní odkaz neplatí. Napiš o nový.");
+    if (!r.ok) { toast("Tenhle kód neplatí. Napiš o nový odkaz."); return false; }
     const first = !auth.code;
     Object.assign(auth, { code, key: r.key, name: r.name, admin: r.admin === undefined ? true : !!r.admin });
     try { localStorage.setItem("clt-auth", JSON.stringify(auth)); } catch (e) {}
     if (first && P[r.key]) { state.person = r.key; state.view = "mine"; save(); }
+    codeForm = false;
     render(); renderLive();
     toast(`Přihlášeno: ${r.name}. Zůstaneš přihlášený i příště.`);
-  } catch (e) { toast("Přihlášení se nepovedlo, zkus odkaz otevřít znovu se signálem."); }
+    return true;
+  } catch (e) { toast("Přihlášení se nepovedlo, zkus to znovu se signálem."); return false; }
+}
+async function loginFromHash() {
+  const m = /(?:^|[#&])k=([A-Za-z0-9]{8,32})/.exec(location.hash || "");
+  if (!m || !LIVE) return;
+  history.replaceState(null, "", location.pathname + location.search);
+  await loginWithCode(m[1]);
 }
 function findItem(sheet, key) {
   if (sheet === "Úkoly") return DATA.tasks.find(t => t.id === key);
@@ -824,7 +833,19 @@ async function setField(el) {
   }
 }
 document.addEventListener("change", e => { const el = e.target.closest("[data-set]"); if (el) setField(el); });
-document.addEventListener("click", e => { if (e.target.closest("#logout")) logout("Odhlášeno. Teď jsi v diváckém režimu."); });
+document.addEventListener("click", e => {
+  if (e.target.closest("#logout")) return logout("Odhlášeno. Teď jsi v diváckém režimu.");
+  if (e.target.closest("#code-btn")) { codeForm = true; renderLive(); const i = $("code-in"); if (i) i.focus(); return; }
+  if (e.target.closest("#code-cancel")) { codeForm = false; renderLive(); }
+});
+document.addEventListener("submit", e => {
+  if (e.target.id !== "code-form") return;
+  e.preventDefault();
+  const v = ($("code-in").value || "").trim();
+  const m = /k=([A-Za-z0-9]{8,32})/.exec(v) || /^([A-Za-z0-9]{8,32})$/.exec(v);
+  if (!m) return toast("Vlož kód (12 znaků) nebo celý osobní odkaz.");
+  loginWithCode(m[1]);
+});
 if (LIVE) {
   try { const c = JSON.parse(localStorage.getItem("clt-live") || "null"); if (c && Array.isArray(c.tasks)) { apply(c); liveState = "off"; } } catch (e) {}
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 60000);
