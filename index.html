@@ -721,6 +721,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.
 // ---------------------------------------------------------------- live data, kódy, zápis
 const $ = id => document.getElementById(id);
 let codeForm = false;
+const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
 let toastT = null, lastJson = "", liveState = LIVE ? "load" : "static", liveAt = SNAPSHOT.at || "";
 function toast(msg) {
   const el = $("toast"); el.textContent = msg; el.hidden = false;
@@ -735,7 +736,7 @@ function renderLive() {
   const a = $("auth");
   if (!LIVE) { a.innerHTML = ""; return; }
   a.innerHTML = auth.code
-    ? `<span><span class="lbl-long">Odškrtáváš jako </span><span class="me">${esc(auth.name || auth.key)}</span>${auth.admin ? " · správce" : ""}</span><button type="button" class="btn" id="logout">Odhlásit</button>`
+    ? `<span><span class="lbl-long">Odškrtáváš jako </span><span class="me">${esc(auth.name || auth.key)}</span>${auth.admin ? " · správce" : ""}</span>${standalone ? "" : `<button type="button" class="btn" id="pin-btn">Na plochu</button>`}<button type="button" class="btn" id="logout">Odhlásit</button>`
     : codeForm
       ? `<form id="code-form" class="auth"><input id="code-in" class="code-in" autocomplete="off" autocapitalize="characters" placeholder="kód nebo osobní odkaz" aria-label="Kód nebo osobní odkaz"><button type="submit" class="btn">Přihlásit</button><button type="button" class="btn" id="code-cancel">Zrušit</button></form>`
       : `<span class="ro">Divácký režim</span><button type="button" class="btn" id="code-btn">Mám kód</button>`;
@@ -779,6 +780,7 @@ function logout(msg) {
 }
 async function loginWithCode(code) {
   code = String(code || "").toUpperCase();
+  const quiet = auth.code === code;
   try {
     const r = await post({ action: "whoami", code });
     if (!r.ok) { toast("Tenhle kód neplatí. Napiš o nový odkaz."); return false; }
@@ -788,7 +790,7 @@ async function loginWithCode(code) {
     if (first && P[r.key]) { state.person = r.key; state.view = "mine"; save(); }
     codeForm = false;
     render(); renderLive();
-    toast(`Přihlášeno: ${r.name}. Zůstaneš přihlášený i příště.`);
+    if (!quiet) toast(`Přihlášeno: ${r.name}. Zůstaneš přihlášený i příště.`);
     return true;
   } catch (e) { toast("Přihlášení se nepovedlo, zkus to znovu se signálem."); return false; }
 }
@@ -835,6 +837,13 @@ async function setField(el) {
 document.addEventListener("change", e => { const el = e.target.closest("[data-set]"); if (el) setField(el); });
 document.addEventListener("click", e => {
   if (e.target.closest("#logout")) return logout("Odhlášeno. Teď jsi v diváckém režimu.");
+  if (e.target.closest("#pin-btn")) {
+    history.replaceState(null, "", location.pathname + location.search + "#k=" + auth.code);
+    const el = $("toast");
+    el.textContent = "Teď klepni na Sdílet → Přidat na plochu. Ikona tě pak otevře rovnou přihlášeného. Adresu s kódem nikomu neposílej.";
+    el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 15000);
+    return;
+  }
   if (e.target.closest("#code-btn")) { codeForm = true; renderLive(); const i = $("code-in"); if (i) i.focus(); return; }
   if (e.target.closest("#code-cancel")) { codeForm = false; renderLive(); }
 });

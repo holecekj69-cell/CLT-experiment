@@ -1,7 +1,6 @@
 {
  "name": "CLT REFRESH",
  "short_name": "CLT REFRESH",
- "start_url": "./",
  "scope": "./",
  "display": "standalone",
  "background_color": "#0B2335",
