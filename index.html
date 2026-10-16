@@ -70,7 +70,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .start .cd { font-family: var(--f-mono); font-size: 20px; font-weight: 500; color: #FFFFFF; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
 .start .cd small { display: block; font-family: var(--f-body); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #CFE3EA; }
 .start .cd.burn { color: #FFB4C0; }
-[data-now][hidden] { display: none !important; }
+[hidden] { display: none !important; }
 
 /* controls */
 .bar-ctl { position: sticky; top: calc(44px + env(safe-area-inset-top, 0px)); z-index: 5; background: var(--bg); padding-block: 12px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
@@ -265,6 +265,14 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .vt .yes { color: #2F7D4A; font-weight: 600; }
 .ck.no { border-left-color: var(--ember); }
 @media (max-width: 560px) { .vt { font-size: 13px; } .vt th, .vt td { padding: 6px 5px; } .vt thead th { white-space: normal; letter-spacing: 0; font-size: 10px; vertical-align: bottom; } }
+/* Lišty nahoře: při posunu dolů zmizí, při posunu nahoru se vrátí (jen počítač, na mobilu ovládání neplave) */
+@media (min-width: 641px) {
+  .status, .bar-ctl { transition: transform 0.28s ease, box-shadow 0.28s ease; will-change: transform; }
+  body.bars-up .status { transform: translateY(-100%); }
+  body.bars-up .bar-ctl { transform: translateY(calc(-100% - 44px - env(safe-area-inset-top, 0px))); }
+  body.bars-down .bar-ctl { box-shadow: 0 6px 14px rgba(20, 28, 32, 0.10); }
+}
+@media (prefers-reduced-motion: reduce) { .status, .bar-ctl { transition: none; } }
 .toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40;
   background: var(--ink); color: var(--bg); padding: 10px 14px; font-size: 14px; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
 @media (max-width: 560px) { .ck { grid-template-columns: minmax(0, 1fr); } .tg { justify-content: flex-start; } }
@@ -286,7 +294,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
     <div class="row" id="row-days"><span class="lbl">Den</span><div class="seg" id="days" role="group" aria-label="Den"></div></div>
     <div class="row"><span class="lbl">Pohled</span><div class="seg" id="views" role="group" aria-label="Pohled">
       <button type="button" id="v-axis" data-v="axis">Osa</button><button type="button" id="v-list" data-v="list">Seznam</button><button type="button" id="v-tasks" data-v="tasks">Činnosti</button><button type="button" id="v-people" data-v="people">Lidé</button></div></div>
-    <div class="row"><span class="lbl">Odškrtávání</span><div class="seg" id="views2" role="group" aria-label="Odškrtávání">
+    <div class="row" id="row-check"><span class="lbl">Odškrtávání</span><div class="seg" id="views2" role="group" aria-label="Odškrtávání">
       <button type="button" id="v-mine" data-v="mine">Moje věci</button><button type="button" id="v-status" data-v="status">Stav úkolů</button><button type="button" id="v-buy" data-v="buy">Nákup</button><button type="button" id="v-gear" data-v="gear">Přístroje</button><button type="button" id="v-open" data-v="open">Otevřené body</button><button type="button" id="v-visits" data-v="visits">Návštěvy</button><button type="button" id="v-todo" data-v="todo">Nesplněno</button></div></div>
     <div class="row"><span class="lbl">Osoba</span><div class="row" id="people" role="group" aria-label="Osoba"></div></div>
   </div>
@@ -297,8 +305,8 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
   <div class="legend" id="legend"></div>
   <footer class="foot">
     <div id="src-note">Stránka je kopie Excelu CLT_REFRESH_harmonogram.xlsx. Změny se dělají v Excelu (list Úkoly).</div>
-    <div>Šedý pruh = po západu slunce (cca 16:30).</div>
-    <div>Žlutě = chybí informace (DOPLNIT). Klepnutím na úkol zobrazíš detail. Pohled Osa ukazuje každý den na jedné čáře, souběžné činnosti jsou nad a pod ní. Seznam je pro telefon, Osa, Činnosti a Lidé pro počítač (na telefonu se posouvají do strany).</div>
+    <div class="tl-only">Šedý pruh = po západu slunce (cca 16:30).</div>
+    <div class="tl-only">Žlutě = chybí informace (DOPLNIT). Klepnutím na úkol zobrazíš detail. Pohled Osa ukazuje každý den na jedné čáře, souběžné činnosti jsou nad a pod ní. Seznam je pro telefon, Osa, Činnosti a Lidé pro počítač (na telefonu se posouvají do strany).</div>
   </footer>
 </div>
 
@@ -386,6 +394,11 @@ function renderControls() {
     DAYS.map(d => `<button type="button" id="d-${d.tag}" data-d="${d.key}" aria-pressed="${state.day === d.key}">${d.short}<small>${counts[d.key]}</small></button>`).join("");
   document.querySelectorAll("#views button, #views2 button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.view)));
   document.getElementById("row-days").hidden = CHECK_VIEWS.includes(state.view) && state.view !== "status";
+  // Divák vidí jen časové osy. Odškrtávání se ukáže až po přihlášení kódem.
+  document.getElementById("row-check").hidden = !canWrite();
+  const tl = !CHECK_VIEWS.includes(state.view);
+  document.getElementById("legend").hidden = !tl;
+  document.querySelectorAll(".tl-only").forEach(el => { el.hidden = !tl; });
   document.getElementById("people").innerHTML =
     `<button type="button" class="chip" id="p-all" data-p="" aria-pressed="${!state.person}"><i style="background:var(--muted)"></i>Všichni</button>` +
     DATA.people.map(p => `<button type="button" class="chip" id="p-${esc(p.key)}" data-p="${esc(p.key)}" aria-pressed="${state.person === p.key}" title="${esc(p.full)}"><i style="background:${p.color}"></i>${esc(p.key)}</button>`).join("");
@@ -738,6 +751,7 @@ function viewTodo() {
 }
 
 function render() {
+  if (!canWrite() && CHECK_VIEWS.includes(state.view)) state.view = narrow ? "list" : "axis";
   if (CHECK_VIEWS.includes(state.view)) {
     const f = { mine: viewMine, status: viewStatus, buy: viewBuy, gear: viewGear, open: viewOpen, visits: viewVisits, todo: viewTodo }[state.view];
     document.getElementById("board").innerHTML = f();
@@ -786,6 +800,24 @@ function tickCountdown() {
 }
 tickCountdown();
 setInterval(tickCountdown, 1000);
+
+// Lišty nahoře: dolů = schovat, nahoru = ukázat.
+(function () {
+  let lastY = window.scrollY, ticking = false;
+  const upd = () => {
+    ticking = false;
+    const y = Math.max(0, window.scrollY), dy = y - lastY;
+    const b = document.body;
+    if (y < 80) { b.classList.remove("bars-up"); b.classList.remove("bars-down"); lastY = y; return; }
+    if (Math.abs(dy) < 6) return;
+    const typing = document.activeElement && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName) && document.activeElement.closest(".status, .bar-ctl");
+    if (dy > 0 && !typing) { b.classList.add("bars-up"); b.classList.remove("bars-down"); }
+    else if (dy < 0) { b.classList.remove("bars-up"); b.classList.add("bars-down"); }
+    lastY = y;
+  };
+  window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
+  document.addEventListener("focusin", e => { if (e.target.closest && e.target.closest(".status, .bar-ctl")) document.body.classList.remove("bars-up"); });
+})();
 setInterval(tickNow, 15000);
 
 function showSheet(id) {
