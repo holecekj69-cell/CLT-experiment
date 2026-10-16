@@ -67,6 +67,10 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .start { display: grid; gap: 2px; padding: 10px 14px; border-left: 4px solid var(--brand-teal); background: rgba(11, 35, 53, 0.78); }
 .start b { font-family: var(--f-display); font-size: 28px; line-height: 1; font-weight: 700; color: var(--brand-teal); }
 .start span { font-size: 13px; color: #E8E4E4; }
+.start .cd { font-family: var(--f-mono); font-size: 20px; font-weight: 500; color: #FFFFFF; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
+.start .cd small { display: block; font-family: var(--f-body); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #CFE3EA; }
+.start .cd.burn { color: #FFB4C0; }
+[data-now][hidden] { display: none !important; }
 
 /* controls */
 .bar-ctl { position: sticky; top: calc(44px + env(safe-area-inset-top, 0px)); z-index: 5; background: var(--bg); padding-block: 12px; display: grid; gap: 10px; border-bottom: 1px solid var(--line); }
@@ -115,7 +119,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .trk { position: relative; min-height: 42px;
   background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px);
   background-size: calc(100% * 60 / 690) 100%; }
-.hdr .trk { min-height: 26px; background-image: none; }
+.hdr .trk { min-height: 36px; background-image: none; }
 .hdr .lab { font-family: var(--f-mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; justify-content: start; align-content: center; }
 .hr { position: absolute; top: 5px; transform: translateX(-50%); font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .hr:first-child { transform: none; padding-left: 3px; }
@@ -124,7 +128,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .mk.alt { border-left-style: dashed; opacity: 0.8; }
 .mk.now { border-left-color: var(--accent); }
 .mk em { position: absolute; top: 2px; left: 4px; font-style: normal; font-family: var(--f-mono); font-size: 10px; color: var(--ember); white-space: nowrap; background: var(--surface); padding: 0 2px; }
-.mk.now em { color: var(--accent); }
+.mk.now em { color: var(--accent); top: auto; bottom: 2px; }
 .b { position: absolute; height: 26px; border: 0; padding: 0 6px; cursor: pointer; font-size: 12px; font-weight: 500; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 1; }
 .b:hover { filter: brightness(1.08); box-shadow: 0 0 0 2px var(--ink); }
 .b.bg { opacity: 0.32; font-weight: 400; }
@@ -167,6 +171,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .ag-span { min-width: 3px; }
 .ag-pt { width: 8px; height: 8px; transform: translateX(-50%) rotate(45deg); background: var(--ink); }
 .ag-mk { width: 0; border-left: 2px solid var(--ember); top: -3px !important; bottom: -3px !important; }
+.ag-now { width: 0; border-left: 2px solid var(--accent); top: -4px !important; bottom: -4px !important; z-index: 1; }
 @media (max-width: 480px) { .ag-i button { grid-template-columns: minmax(0, 1fr); } .ag-t { grid-row: auto; } }
 
 /* legend + foot */
@@ -274,7 +279,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
       <div class="meta" id="meta"></div>
       <div class="lead" id="lead"></div>
     </div>
-    <div class="start"><b>Čt 5. 11. · 11:15</b><span>11:00 úvodní slovo</span></div>
+    <div class="start"><b>Čt 5. 11. · 11:15</b><span>11:00 úvodní slovo</span><span class="cd" id="cd" role="timer" aria-live="off"></span></div>
   </header>
 
   <div class="bar-ctl">
@@ -312,6 +317,14 @@ const DAYS = [
   { key: "2026-11-05", short: "Čt 5. 11.", long: "Čtvrtek 5. 11.", sub: "zapojení měření, experiment, hašení, úklid", tag: "ct" },
 ];
 const START = 7 * 60, END = 18 * 60 + 30, SPAN = END - START, DUSK = 16 * 60 + 30;
+// Zapálení Čt 5. 11. 2026 11:15 SEČ (UTC+1), konec dne 18:30.
+const IGNITION = Date.UTC(2026, 10, 5, 10, 15), DAY_END = Date.UTC(2026, 10, 5, 17, 30);
+// Náhled jiného času: ?t=2026-11-05T10:42
+let NOW_OFFSET = 0;
+try { const q = new URLSearchParams(location.search).get("t"); if (q) { const d = new Date(q); if (!isNaN(d)) NOW_OFFSET = d.getTime() - Date.now(); } } catch (e) {}
+const nowDate = () => new Date(Date.now() + NOW_OFFSET);
+const p2 = n => String(n).padStart(2, "0");
+const isoDay = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 const VIEWS = ["axis", "list", "tasks", "people", "mine", "status", "buy", "gear", "open", "visits", "todo"];
 const CHECK_VIEWS = ["mine", "status", "buy", "gear", "open", "visits", "todo"];
 const SHEET = { status: "Úkoly", buy: "Nákup", gear: "Přístroje", open: "Otevřené body" };
@@ -389,10 +402,7 @@ function whoChips(t) {
 function overlays(dayKey) {
   let h = `<div class="dusk" style="left:${pct(DUSK)}"></div>`;
   if (dayKey === "2026-11-05") h += `<div class="mk" style="left:${pct(675)}"></div>`;
-  const now = new Date(), iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const nm = now.getHours() * 60 + now.getMinutes();
-  if (iso === dayKey && nm >= START && nm <= END) h += `<div class="mk now" style="left:${pct(nm)}"><em>teď</em></div>`;
-  return h;
+  return h + `<div class="mk now" data-now="${dayKey}" hidden></div>`;
 }
 
 function patBg(type, c) {
@@ -428,7 +438,7 @@ function axisDay(day) {
   const TOP = 24, LH = 24, GAP = 7, MH = 46;
   const mainY = TOP + ups * (LH + GAP);
   const yOf = l => l === 0 ? mainY + 4 : (l > 0 ? TOP + (ups - l) * (LH + GAP) : mainY + MH + GAP + (-l - 1) * (LH + GAP));
-  const H = mainY + MH + downs * (LH + GAP) + 10;
+  const H = mainY + MH + downs * (LH + GAP) + 24;
   let h = "";
   for (let hr = 7; hr <= 18; hr++) h += `<i class="ax-hr" style="left:${pct(hr * 60)}"></i><span class="ax-hl" style="left:${pct(hr * 60)}">${hr}<span class="mm">:00</span></span>`;
   h += `<div class="ax-dusk" style="left:${pct(DUSK)};top:${TOP}px"></div>`;
@@ -436,9 +446,7 @@ function axisDay(day) {
   for (let l = 1; l <= ups; l++) h += `<i class="ax-lane" style="top:${yOf(l) + LH / 2}px"></i>`;
   for (let l = 1; l <= downs; l++) h += `<i class="ax-lane" style="top:${yOf(-l) + LH / 2}px"></i>`;
   if (day.key === "2026-11-05") h += `<div class="mk" style="left:${pct(675)};top:${TOP - 4}px"><em>ZAPÁLENÍ 11:15</em></div>`;
-  const now = new Date(), iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const nm = now.getHours() * 60 + now.getMinutes();
-  if (iso === day.key && nm >= START && nm <= END) h += `<div class="mk now" style="left:${pct(nm)};top:${TOP - 4}px"><em>teď</em></div>`;
+  h += `<div class="mk now" data-now="${day.key}" style="top:${TOP - 4}px" hidden><em>teď</em></div>`;
   bars.forEach(t => {
     const l = lane[t.id], main = l === 0, ht = main ? MH - 8 : LH;
     const dim = state.person && !involves(t, state.person) ? " dim" : "";
@@ -464,6 +472,7 @@ function hdrRow(label, dayKey) {
   for (let h = 7; h <= 18; h++) hrs += `<span class="hr" style="left:${pct(h * 60)}">${h}<span class="mm">:00</span></span>`;
   let mk = "";
   if (dayKey === "2026-11-05") mk = `<div class="mk" style="left:${pct(675)}"><em>ZAPÁLENÍ 11:15</em></div>`;
+  mk += `<div class="mk now" data-now="${dayKey}" hidden><em>teď</em></div>`;
   return `<div class="r hdr"><div class="lab">${label}</div><div class="trk">${hrs}${mk}</div></div>`;
 }
 
@@ -517,7 +526,7 @@ function listRows(day) {
     return `<li class="ag-i${dim}"><button type="button" data-id="${t.id}" style="border-left-color:${t.color}">` +
       `<span class="ag-t">${fmtT(t)}</span><span class="ag-n">${esc(t.what)}</span>` +
       `<span class="ag-who who">${whoChips(t)}</span>` +
-      `<span class="ag-trk" aria-hidden="true"><i class="ag-dusk" style="left:${pct(DUSK)}"></i>${mk}${span}</span></button></li>`;
+      `<span class="ag-trk" aria-hidden="true"><i class="ag-dusk" style="left:${pct(DUSK)}"></i>${mk}${span}<i class="ag-now" data-now="${day.key}" hidden></i></span></button></li>`;
   }).join("") + `</ol>`;
 }
 
@@ -536,7 +545,7 @@ function renderPlan() {
 const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
 const shortDate = s => isDate(s) ? `${+s.slice(8, 10)}. ${+s.slice(5, 7)}.` : "";
 const fmtAt = s => { const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})/.exec(s || ""); return m ? `${+m[3]}. ${+m[2]}. ${m[4]}` : (s || ""); };
-const nowIso = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")} ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`; };
+const nowIso = () => { const n = nowDate(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")} ${String(n.getHours()).padStart(2, "0")}:${String(n.getMinutes()).padStart(2, "0")}`; };
 const overdue = t => !["Hotovo", "Zrušeno"].includes(t.state) && `${t.date} ${t.to || t.from}` < nowIso();
 const pplOf = s => splitWho(s).filter(x => P[x]);
 const has = (s, k) => pplOf(s).includes(k);
@@ -734,6 +743,7 @@ function render() {
     document.getElementById("board").innerHTML = f();
     renderControls();
     document.getElementById("plan").hidden = true;
+    tickNow();
     return;
   }
   const days = state.day === "all" ? DAYS : DAYS.filter(d => d.key === state.day);
@@ -744,7 +754,39 @@ function render() {
   }).join("");
   renderControls();
   renderPlan();
+  tickNow();
 }
+
+// Čára „teď“ na osách: posouvá se bez překreslení celé stránky.
+function tickNow() {
+  const n = nowDate(), iso = isoDay(n), nm = n.getHours() * 60 + n.getMinutes() + n.getSeconds() / 60;
+  const on = nm >= START && nm <= END, label = `teď ${n.getHours()}:${p2(n.getMinutes())}`;
+  document.querySelectorAll("[data-now]").forEach(el => {
+    const show = on && el.dataset.now === iso;
+    if (el.hidden === show) el.hidden = !show;
+    if (!show) return;
+    el.style.left = pct(nm);
+    const em = el.querySelector("em");
+    if (em && em.textContent !== label) em.textContent = label;
+  });
+}
+// Odpočet do zapálení v hlavičce.
+let cdLast = "";
+function tickCountdown() {
+  const el = document.getElementById("cd");
+  if (!el) return;
+  const t = nowDate().getTime(), ms = IGNITION - t;
+  const hms = x => { const s = Math.floor(x / 1000); return `${p2(Math.floor(s / 3600) % 24)}:${p2(Math.floor(s / 60) % 60)}:${p2(s % 60)}`; };
+  let html, cls = "cd";
+  if (ms > 0) { const d = Math.floor(ms / 86400000); html = `<small>Zapálení za</small>${d ? d + " d " : ""}${hms(ms)}`; }
+  else if (t < DAY_END) { html = `<small>Od zapálení</small>${hms(-ms)}`; cls = "cd burn"; }
+  else html = `<small>Experiment proběhl</small>`;
+  if (html !== cdLast) { el.innerHTML = html; cdLast = html; }
+  if (el.className !== cls) el.className = cls;
+}
+tickCountdown();
+setInterval(tickCountdown, 1000);
+setInterval(tickNow, 15000);
 
 function showSheet(id) {
   const t = DATA.tasks.find(x => x.id === id), el = document.getElementById("sheet");
