@@ -441,11 +441,28 @@ function axisDay(day) {
   const bars = all.filter(t => t.f != null && t.t > t.f);
   const ms = all.filter(t => t.f != null && t.f === t.t);
   const notime = all.filter(t => t.f == null);
-  const prio = t => (t.type === "Experiment" ? 0 : 1);
-  bars.sort((a, b) => a.f - b.f || prio(a) - prio(b) || (b.t - b.f) - (a.t - a.f));
+  // Stejná činnost (text před „–“, např. „Teodolit – …“, „Drony – …“) jde na stejný řádek, pokud se úseky nepřekrývají.
+  const fam = t => t.what.split(/\s[–-]\s/)[0].trim().toLowerCase();
+  const items = [], chain = {};
+  bars.slice().sort((a, b) => a.f - b.f || a.t - b.t).forEach(t => {
+    const k = fam(t), c = chain[k];
+    if (c && c.t <= t.f) { c.list.push(t); c.t = t.t; return; }
+    const n = { f: t.f, t: t.t, list: [t], k };
+    items.push(n);
+    if (!c || c.t <= n.t) chain[k] = n;
+  });
+  const prio = it => (it.list.some(t => t.type === "Experiment") ? 0 : 1);
+  items.forEach(it => { it.cont = items.some(o => o !== it && o.k === it.k && o.f < it.f) ? 1 : 0; });
+  items.sort((a, b) => a.f - b.f || prio(a) - prio(b) || b.cont - a.cont || (b.t - b.f) - (a.t - a.f));
   const order = [0]; for (let i = 1; i <= 12; i++) order.push(i, -i);
-  const end = {}; const lane = {};
-  bars.forEach(t => { const l = order.find(k => (end[k] ?? -1) <= t.f); lane[t.id] = l; end[l] = t.t; });
+  const end = {}; const lane = {}; const famLane = {};
+  items.forEach(it => {
+    const free = order.filter(k => (end[k] ?? -1) <= it.f);
+    // Překrývající se díl téže činnosti (např. předávka) dej co nejblíž k jejímu řádku.
+    const l = it.k in famLane ? free.slice().sort((a, b) => Math.abs(a - famLane[it.k]) - Math.abs(b - famLane[it.k]))[0] : free[0];
+    it.list.forEach(t => { lane[t.id] = l; }); end[l] = it.t;
+    if (!(it.k in famLane)) famLane[it.k] = l;
+  });
   const ls = Object.values(lane);
   const ups = Math.max(0, ...ls), downs = Math.max(0, ...ls.map(x => -x));
   const TOP = 24, LH = 24, GAP = 7, MH = 46;
