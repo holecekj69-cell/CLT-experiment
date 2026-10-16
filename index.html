@@ -267,12 +267,11 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 @media (max-width: 560px) { .vt { font-size: 13px; } .vt th, .vt td { padding: 6px 5px; } .vt thead th { white-space: normal; letter-spacing: 0; font-size: 10px; vertical-align: bottom; } }
 /* Lišty nahoře: při posunu dolů zmizí, při posunu nahoru se vrátí (jen počítač, na mobilu ovládání neplave) */
 @media (min-width: 641px) {
-  .status, .bar-ctl { transition: transform 0.28s ease, box-shadow 0.28s ease; will-change: transform; }
-  body.bars-up .status { transform: translateY(-100%); }
-  body.bars-up .bar-ctl { transform: translateY(calc(-100% - 44px - env(safe-area-inset-top, 0px))); }
-  body.bars-down .bar-ctl { box-shadow: 0 6px 14px rgba(20, 28, 32, 0.10); }
+  .status, .bar-ctl { transform: translate3d(0, var(--bars, 0px), 0); will-change: transform; }
+  body.bars-snap .status, body.bars-snap .bar-ctl { transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1); }
+  body.bars-float .bar-ctl { box-shadow: 0 8px 18px rgba(20, 28, 32, 0.12); }
 }
-@media (prefers-reduced-motion: reduce) { .status, .bar-ctl { transition: none; } }
+@media (prefers-reduced-motion: reduce) { body.bars-snap .status, body.bars-snap .bar-ctl { transition: none; } }
 .toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40;
   background: var(--ink); color: var(--bg); padding: 10px 14px; font-size: 14px; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
 @media (max-width: 560px) { .ck { grid-template-columns: minmax(0, 1fr); } .tg { justify-content: flex-start; } }
@@ -818,22 +817,35 @@ function tickCountdown() {
 tickCountdown();
 setInterval(tickCountdown, 1000);
 
-// Lišty nahoře: dolů = schovat, nahoru = ukázat.
+// Lišty nahoře (jen počítač): jedou spolu s posunem stránky, po zastavení plynule dojedou celé nahoru nebo dolů.
 (function () {
-  let lastY = window.scrollY, ticking = false;
-  const upd = () => {
-    ticking = false;
-    const y = Math.max(0, window.scrollY), dy = y - lastY;
-    const b = document.body;
-    if (y < 80) { b.classList.remove("bars-up"); b.classList.remove("bars-down"); lastY = y; return; }
-    if (Math.abs(dy) < 6) return;
-    const typing = document.activeElement && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName) && document.activeElement.closest(".status, .bar-ctl");
-    if (dy > 0 && !typing) { b.classList.add("bars-up"); b.classList.remove("bars-down"); }
-    else if (dy < 0) { b.classList.remove("bars-up"); b.classList.add("bars-down"); }
-    lastY = y;
+  const wide = window.matchMedia("(min-width: 641px)");
+  const root = document.documentElement, body = document.body;
+  let lastY = window.scrollY, off = 0, idle = null, raf = false, dir = 0;
+  const height = () => { const a = document.querySelector(".status"), b = document.querySelector(".bar-ctl"); return (a ? a.offsetHeight : 0) + (b ? b.offsetHeight : 0); };
+  const set = v => { off = v; root.style.setProperty("--bars", (-v).toFixed(1) + "px"); };
+  const snap = () => {
+    const H = height(), y = window.scrollY;
+    body.classList.add("bars-snap");
+    // Poslední směr rozhoduje: trochu nahoru = lišty se vrátí, dolů = schovají se.
+    set(dir > 0 && y > H ? H : 0);
+    body.classList.toggle("bars-float", y > 4 && off === 0);
   };
-  window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(upd); } }, { passive: true });
-  document.addEventListener("focusin", e => { if (e.target.closest && e.target.closest(".status, .bar-ctl")) document.body.classList.remove("bars-up"); });
+  const upd = () => {
+    raf = false;
+    const y = Math.max(0, window.scrollY), dy = y - lastY; lastY = y;
+    if (Math.abs(dy) > 2) dir = dy > 0 ? 1 : -1;
+    if (!wide.matches) { if (off) set(0); body.classList.remove("bars-float"); return; }
+    const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest(".status input, .bar-ctl input");
+    const H = height();
+    body.classList.remove("bars-snap");
+    set(typing ? 0 : Math.min(H, Math.max(0, off + dy), y));
+    body.classList.toggle("bars-float", y > 4 && off < H);
+    clearTimeout(idle); idle = setTimeout(snap, 140);
+  };
+  window.addEventListener("scroll", () => { if (!raf) { raf = true; requestAnimationFrame(upd); } }, { passive: true });
+  document.addEventListener("focusin", e => { if (e.target.closest && e.target.closest(".status, .bar-ctl")) { body.classList.add("bars-snap"); set(0); } });
+  wide.addEventListener && wide.addEventListener("change", () => { body.classList.add("bars-snap"); set(0); });
 })();
 setInterval(tickNow, 15000);
 
