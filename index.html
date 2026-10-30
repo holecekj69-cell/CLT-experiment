@@ -80,6 +80,8 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .seg button { border: 0; background: transparent; padding: 6px 12px; cursor: pointer; font-size: 14px; white-space: nowrap; }
 .seg button { border-right: 1px solid var(--line) !important; }
 .seg button:last-child { border-right: 0 !important; }
+.seg .seg-link { padding: 6px 12px; font-size: 14px; white-space: nowrap; color: var(--ink); text-decoration: none; }
+.seg .seg-link::after { content: " ↗"; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .seg button small { font-family: var(--f-mono); font-size: 11px; opacity: 0.75; margin-left: 4px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 4px 10px 4px 6px; cursor: pointer; font-size: 13px; }
@@ -295,7 +297,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
     <div class="row"><span class="lbl">Pohled</span><div class="seg" id="views" role="group" aria-label="Pohled">
       <button type="button" id="v-axis" data-v="axis">Osa</button><button type="button" id="v-list" data-v="list">Seznam</button><button type="button" id="v-tasks" data-v="tasks">Činnosti</button><button type="button" id="v-people" data-v="people">Lidé</button></div></div>
     <div class="row" id="row-check"><span class="lbl">Odškrtávání</span><div class="seg" id="views2" role="group" aria-label="Odškrtávání">
-      <button type="button" id="v-mine" data-v="mine">Moje věci</button><button type="button" id="v-status" data-v="status">Stav úkolů</button><button type="button" id="v-buy" data-v="buy">Nákup</button><button type="button" id="v-gear" data-v="gear">Přístroje</button><button type="button" id="v-open" data-v="open">Otevřené body</button><button type="button" id="v-visits" data-v="visits">Návštěvy</button><button type="button" id="v-todo" data-v="todo">Nesplněno</button></div></div>
+      <button type="button" id="v-mine" data-v="mine">Moje věci</button><button type="button" id="v-status" data-v="status">Stav úkolů</button><button type="button" id="v-buy" data-v="buy">Nákup</button><button type="button" id="v-gear" data-v="gear">Přístroje</button><button type="button" id="v-open" data-v="open">Otevřené body</button><button type="button" id="v-visits" data-v="visits">Návštěvy</button><button type="button" id="v-todo" data-v="todo">Nesplněno</button><a class="seg-link" href="podklady.html">Podklady TČ</a></div></div>
     <div class="row"><span class="lbl">Osoba</span><div class="row" id="people" role="group" aria-label="Osoba"></div></div>
   </div>
 
@@ -674,6 +676,8 @@ function visitTable(v) {
     `<tbody>${v.orgs.map(o => row(o, "td")).join("")}</tbody><tfoot>${row(v.total, "td")}</tfoot></table></div>`;
 }
 const dimIf = (html, on) => on ? html.replace('class="ck', 'class="ck dim') : html;
+// Nejdřív moje věci, pak ostatní (pořadí uvnitř skupin zůstává).
+const mineFirst = (list, mine) => state.person ? [...list.filter(mine), ...list.filter(x => !mine(x))] : list;
 
 function hint() { return ""; }
 
@@ -683,7 +687,7 @@ function viewStatus() {
   const done = ts.filter(t => t.state === "Hotovo").length;
   return `<div class="ck-h"><h2>Stav úkolů</h2><span class="sum">hotovo ${done} / ${ts.length}</span></div>${hint()}` +
     days.map(d => {
-      const list = ts.filter(t => t.date === d.key);
+      const list = mineFirst(ts.filter(t => t.date === d.key), t => involves(t, state.person));
       return `<div class="ck-h"><h3>${d.long}</h3><span class="sum">${list.filter(t => t.state === "Hotovo").length} / ${list.length}</span></div><ol class="ck-list">` +
         list.map(t => dimIf(taskItem(t), state.person && !involves(t, state.person))).join("") + `</ol>`;
     }).join("");
@@ -691,14 +695,14 @@ function viewStatus() {
 function viewBuy() {
   const done = DATA.buy.filter(b => b.Koupeno === "ano").length;
   return `<div class="ck-h"><h2>Nákup</h2><span class="sum">koupeno ${done} / ${DATA.buy.length} · vše na fakturu</span></div>${hint()}` +
-    `<ol class="ck-list">${DATA.buy.map(b => dimIf(buyItem(b), state.person && !has(b.who, state.person))).join("")}</ol>`;
+    `<ol class="ck-list">${mineFirst(DATA.buy, b => has(b.who, state.person)).map(b => dimIf(buyItem(b), state.person && !has(b.who, state.person))).join("")}</ol>`;
 }
 function viewGear() {
   const secs = [...new Set(DATA.gear.map(g => g.sec))];
   const onSite = DATA.gear.filter(g => g["Na místě"] === "ano").length;
   return `<div class="ck-h"><h2>Přístroje a vybavení</h2><span class="sum">na místě ${onSite} / ${DATA.gear.length}</span></div>${hint()}` +
     secs.map(s => {
-      const list = DATA.gear.filter(g => g.sec === s);
+      const list = mineFirst(DATA.gear.filter(g => g.sec === s), g => gearPeople(g).includes(state.person));
       return `<div class="ck-h"><h3>${esc(s || "Přístroje")}</h3><span class="sum">${list.length} položek</span></div><ol class="ck-list">` +
         list.map(g => dimIf(gearItem(g), state.person && !gearPeople(g).includes(state.person))).join("") + `</ol>`;
     }).join("");
@@ -706,7 +710,7 @@ function viewGear() {
 function viewOpen() {
   const open = DATA.open.filter(o => o.Stav !== "Vyřešeno").length;
   return `<div class="ck-h"><h2>Otevřené body</h2><span class="sum">otevřeno ${open} / ${DATA.open.length}</span></div>${hint()}` +
-    `<ol class="ck-list">${DATA.open.map(o => dimIf(openItem(o), state.person && !has(o.owner, state.person))).join("")}</ol>`;
+    `<ol class="ck-list">${mineFirst(DATA.open, o => has(o.owner, state.person)).map(o => dimIf(openItem(o), state.person && !has(o.owner, state.person))).join("")}</ol>`;
 }
 function viewVisits() {
   const v = GUESTS ? summarize(GUESTS) : DATA.visits;
@@ -717,7 +721,7 @@ function viewVisits() {
   if (!GUESTS) return h + `<p class="ro">${guestState === "err" ? "Seznam hostů se nepodařilo načíst. Zkus to znovu se signálem." : "Načítám seznam hostů…"}</p>`;
   h += `<p class="ro">Osloven a Účast mění ten, kdo hosta pozval, a správci. Nového hosta přidá správce v tabulce, list Návštěvy.</p>`;
   return h + v.orgs.map(o => {
-    const list = GUESTS.filter(g => orgKey(orgOf(g)) === orgKey(o.org));
+    const list = mineFirst(GUESTS.filter(g => orgKey(orgOf(g)) === orgKey(o.org)), g => has(g.by, state.person));
     return `<div class="ck-h"><h3>${esc(o.org)}</h3><span class="sum">potvrzeno ${o.yes} / ${o.total}</span></div><ol class="ck-list">` +
       list.map(g => dimIf(guestItem(g), state.person && !has(g.by, state.person))).join("") + `</ol>`;
   }).join("");
