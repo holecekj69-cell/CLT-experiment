@@ -967,7 +967,20 @@ function apply(d) {
   if (j === lastJson) return false;
   lastJson = j;
   prep(JSON.parse(j));
+  overlayPending();
   return true;
+}
+// Rozepsané a čerstvě uložené změny: dokud je tabulka nevrátí, drží se na webu (jinak by na chvíli zmizely).
+const PENDING = {};
+const fieldOf = (sheet, field) => sheet === "Úkoly" && field === "Stav" ? "state" : field;
+function overlayPending() {
+  const now = Date.now();
+  Object.keys(PENDING).forEach(id => {
+    const p = PENDING[id], it = findItem(p.sheet, p.key), f = fieldOf(p.sheet, p.field);
+    if (!it) { delete PENDING[id]; return; }
+    if (p.done && (String(it[f] ?? "") === String(p.value) || now - p.done > 90000)) { delete PENDING[id]; return; }
+    it[f] = p.value;
+  });
 }
 async function refresh() {
   if (!LIVE) return;
@@ -1046,6 +1059,8 @@ async function setField(el) {
   if (!it || !canWrite()) return render();
   if (!navigator.onLine) { toast("Bez signálu nejde ukládat. Zkus to, až bude spojení."); return render(); }
   const prev = it[field === "Stav" && sheet === "Úkoly" ? "state" : field];
+  const pid = sheet + "|" + key + "|" + field;
+  PENDING[pid] = { sheet, key, field, value, done: 0 };
   const set = v => { if (sheet === "Úkoly") it.state = v; else it[field] = v; };
   const quiet = sheet === "Termočlánky";
   // Termočlánky: nepřekreslovat, jinak by vyplňující přišel o kurzor v dalším poli.
@@ -1054,17 +1069,20 @@ async function setField(el) {
   try {
     const r = await post({ action: "set", code: auth.code, sheet, key, field, value, name });
     if (!r.ok) {
+      delete PENDING[pid];
       set(prev); render();
       if (r.error === "bad_code") return logout(ERR.bad_code);
       toast(ERR[r.error] || "Uložení se nepovedlo.");
       if (r.error === "item_changed" || r.error === "item_not_found") refresh();
       return;
     }
+    if (PENDING[pid] && PENDING[pid].value === value) PENDING[pid].done = Date.now();
     DATA.log.push({ at: r.at, who: r.key, name: r.name, sheet, key: String(key), field, value });
     LAST[sheet + "|" + key] = DATA.log[DATA.log.length - 1];
     calm();
     toast(`Uloženo do tabulky: ${field} → ${value}`);
   } catch (e) {
+    delete PENDING[pid];
     set(prev); render(); toast("Uložení se nepovedlo, zkontroluj signál.");
   }
 }
