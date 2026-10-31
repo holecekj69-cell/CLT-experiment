@@ -80,6 +80,23 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .seg button { border: 0; background: transparent; padding: 6px 12px; cursor: pointer; font-size: 14px; white-space: nowrap; }
 .seg button { border-right: 1px solid var(--line) !important; }
 .seg button:last-child { border-right: 0 !important; }
+.tc-wrap { overflow-x: auto; margin: 4px 0 18px; }
+.tc { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--surface); }
+.tc th, .tc td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: middle; }
+.tc thead th { background: var(--grid); font-weight: 600; white-space: nowrap; }
+.tc tbody th { font-family: var(--f-mono); white-space: nowrap; }
+.tc tbody th small { display: block; font-family: var(--f-body); font-weight: 400; color: var(--ember); white-space: normal; max-width: 180px; }
+.tc input { width: 100%; min-width: 70px; font: inherit; padding: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.tc input:focus { outline: 2px solid var(--accent); }
+.tc .tc-in, .tc .tc-empty { color: var(--muted); }
+@media (max-width: 640px) {
+  .tc thead { display: none; }
+  .tc, .tc tbody, .tc tr, .tc th, .tc td { display: block; width: 100%; }
+  .tc tr { border: 1px solid var(--line); margin-bottom: 8px; }
+  .tc th, .tc td { border: 0; }
+  .tc td { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
+  .tc td::before { content: attr(data-l); color: var(--muted); font-size: 13px; }
+}
 .seg .seg-link { padding: 6px 12px; font-size: 14px; white-space: nowrap; color: var(--ink); text-decoration: none; }
 .seg .seg-link::after { content: " ↗"; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
@@ -297,7 +314,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
     <div class="row"><span class="lbl">Pohled</span><div class="seg" id="views" role="group" aria-label="Pohled">
       <button type="button" id="v-axis" data-v="axis">Osa</button><button type="button" id="v-list" data-v="list">Seznam</button><button type="button" id="v-tasks" data-v="tasks">Činnosti</button><button type="button" id="v-people" data-v="people">Lidé</button></div></div>
     <div class="row" id="row-check"><span class="lbl">Odškrtávání</span><div class="seg" id="views2" role="group" aria-label="Odškrtávání">
-      <button type="button" id="v-mine" data-v="mine">Moje věci</button><button type="button" id="v-status" data-v="status">Stav úkolů</button><button type="button" id="v-buy" data-v="buy">Nákup</button><button type="button" id="v-gear" data-v="gear">Přístroje</button><button type="button" id="v-open" data-v="open">Otevřené body</button><button type="button" id="v-visits" data-v="visits">Návštěvy</button><button type="button" id="v-todo" data-v="todo">Nesplněno</button><a class="seg-link" href="podklady.html">Podklady TČ</a></div></div>
+      <button type="button" id="v-mine" data-v="mine">Moje věci</button><button type="button" id="v-status" data-v="status">Stav úkolů</button><button type="button" id="v-buy" data-v="buy">Nákup</button><button type="button" id="v-gear" data-v="gear">Přístroje</button><button type="button" id="v-open" data-v="open">Otevřené body</button><button type="button" id="v-visits" data-v="visits">Návštěvy</button><button type="button" id="v-tc" data-v="tc">Termočlánky</button><button type="button" id="v-todo" data-v="todo">Nesplněno</button><a class="seg-link" href="podklady.html">Podklady TČ</a></div></div>
     <div class="row"><span class="lbl">Osoba</span><div class="row" id="people" role="group" aria-label="Osoba"></div></div>
   </div>
 
@@ -335,8 +352,8 @@ try { const q = new URLSearchParams(location.search).get("t"); if (q) { const d 
 const nowDate = () => new Date(Date.now() + NOW_OFFSET);
 const p2 = n => String(n).padStart(2, "0");
 const isoDay = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
-const VIEWS = ["axis", "list", "tasks", "people", "mine", "status", "buy", "gear", "open", "visits", "todo"];
-const CHECK_VIEWS = ["mine", "status", "buy", "gear", "open", "visits", "todo"];
+const VIEWS = ["axis", "list", "tasks", "people", "mine", "status", "buy", "gear", "open", "visits", "tc", "todo"];
+const CHECK_VIEWS = ["mine", "status", "buy", "gear", "open", "visits", "tc", "todo"];
 const SHEET = { status: "Úkoly", buy: "Nákup", gear: "Přístroje", open: "Otevřené body" };
 const GEAR_FIELDS = [["Zkontrolováno / nabito", "Zkontrolováno"], ["Naloženo", "Naloženo"], ["Na místě", "Na místě"], ["Vráceno", "Vráceno"]];
 const TASK_STATES = ["Nezačato", "Rozpracováno", "Hotovo", "Zrušeno"];
@@ -601,6 +618,7 @@ function canEdit(sheet, it) {
   if (sheet === "Přístroje") return splitWho(it.op).includes(k) || splitWho(it.carrier).includes(k);
   if (sheet === "Otevřené body") return splitWho(it.owner).includes(k);
   if (sheet === "Návštěvy") return splitWho(it.by).includes(k);
+  if (sheet === "Termočlánky") return splitWho(it.who).includes(k);
   return false;
 }
 function box(sheet, key, name, field, label, on, editable) {
@@ -707,6 +725,29 @@ function viewGear() {
         list.map(g => dimIf(gearItem(g), state.person && !gearPeople(g).includes(state.person))).join("") + `</ol>`;
     }).join("");
 }
+const TC_FIELDS = [["Označení na prodlužce", "Prodlužka"], ["Označení na ústředně", "Ústředna"], ["Slot na ústředně", "Slot"]];
+function tcCell(t, f, l, ed) {
+  const v = t[f] || "";
+  if (!ed) return `<td data-l="${l}">${v ? esc(v) : '<span class="tc-empty">–</span>'}</td>`;
+  return `<td data-l="${l}"><input type="text" maxlength="40" inputmode="text" autocomplete="off" aria-label="${esc(l + " " + t.name)}" value="${esc(v)}" data-set="Termočlánky" data-key="${esc(t.n)}" data-name="${esc(t.name)}" data-field="${esc(f)}"></td>`;
+}
+function viewTc() {
+  const tc = DATA.tc || [];
+  const filled = tc.filter(t => TC_FIELDS.every(([f]) => t[f])).length;
+  let h = `<div class="ck-h"><h2>Termočlánky</h2><span class="sum">vyplněno ${filled} / ${tc.length}</span></div>`;
+  if (!tc.length) return h + `<p class="ro">${LIVE ? "List Termočlánky v tabulce zatím není, nebo ho skript ještě nečte." : "Termočlánky jsou jen v živé verzi webu."}</p>`;
+  h += `<p class="ro">Napiš označení a potvrď Enterem nebo klepnutím jinam – uloží se do tabulky. Nákresy jsou v <a href="podklady.html">Podklady TČ</a>. Hloubky v tabulce Semianové jsou nejspíš cm od vnější strany, před vrtáním ověřit.</p>`;
+  return h + [...new Set(tc.map(t => t.sec))].map(s => {
+    const list = tc.filter(t => t.sec === s), chain = /řetěz/i.test(s);
+    return `<div class="ck-h"><h3>${esc(s)}</h3><span class="sum">${list.filter(t => TC_FIELDS.every(([f]) => t[f])).length} / ${list.length}</span></div>` +
+      `<div class="tc-wrap"><table class="tc"><thead><tr><th>Čidlo</th><th>${chain ? "Výška [mm]" : "Hloubka (tabulka · schéma)"}</th>${TC_FIELDS.map(([, l]) => `<th>${l}</th>`).join("")}</tr></thead><tbody>` +
+      list.map(t => {
+        const ed = canEdit("Termočlánky", t);
+        return `<tr><th scope="row">${esc(t.name)}${t.note ? `<small>${esc(t.note)}</small>` : ""}</th><td data-l="${chain ? "Výška" : "Hloubka"}"><span>${esc(t.depth)}${t.inner !== "" ? ` <span class="tc-in">· zevnitř ${esc(t.inner)} mm</span>` : ""}</span></td>` +
+          TC_FIELDS.map(([f, l]) => tcCell(t, f, l, ed)).join("") + `</tr>`;
+      }).join("") + `</tbody></table></div>`;
+  }).join("");
+}
 function viewOpen() {
   const open = DATA.open.filter(o => o.Stav !== "Vyřešeno").length;
   return `<div class="ck-h"><h2>Otevřené body</h2><span class="sum">otevřeno ${open} / ${DATA.open.length}</span></div>${hint()}` +
@@ -774,7 +815,7 @@ function viewTodo() {
 function render() {
   if (!canWrite() && CHECK_VIEWS.includes(state.view)) state.view = narrow ? "list" : "axis";
   if (CHECK_VIEWS.includes(state.view)) {
-    const f = { mine: viewMine, status: viewStatus, buy: viewBuy, gear: viewGear, open: viewOpen, visits: viewVisits, todo: viewTodo }[state.view];
+    const f = { mine: viewMine, status: viewStatus, buy: viewBuy, gear: viewGear, open: viewOpen, visits: viewVisits, tc: viewTc, todo: viewTodo }[state.view];
     document.getElementById("board").innerHTML = f();
     renderControls();
     document.getElementById("plan").hidden = true;
@@ -936,7 +977,7 @@ async function refresh() {
     if (!d || !Array.isArray(d.tasks)) throw new Error("bad");
     liveState = "ok";
     try { localStorage.setItem("clt-live", JSON.stringify(d)); } catch (e) {}
-    if (apply(d) && !document.querySelector("select:focus")) { $("meta").textContent = metaText(); render(); }
+    if (apply(d) && !document.querySelector("select:focus, .tc input:focus")) { $("meta").textContent = metaText(); render(); }
   } catch (e) {
     liveState = "off";
   }
@@ -992,7 +1033,7 @@ async function loginFromHash() {
 }
 function findItem(sheet, key) {
   if (sheet === "Úkoly") return DATA.tasks.find(t => t.id === key);
-  const list = { "Nákup": DATA.buy, "Přístroje": DATA.gear, "Otevřené body": DATA.open, "Návštěvy": GUESTS || [] }[sheet];
+  const list = { "Nákup": DATA.buy, "Přístroje": DATA.gear, "Otevřené body": DATA.open, "Návštěvy": GUESTS || [], "Termočlánky": DATA.tc || [] }[sheet];
   return list && list.find(x => String(x.n) === String(key));
 }
 const ERR = { bad_code: "Tvůj kód už neplatí. Napiš o nový odkaz.", not_yours: "Tohle není tvoje položka. Odškrtnout ji může ten, komu patří, nebo správce.", item_changed: "Položka se mezitím v tabulce změnila. Načítám znovu.",
@@ -1006,7 +1047,10 @@ async function setField(el) {
   if (!navigator.onLine) { toast("Bez signálu nejde ukládat. Zkus to, až bude spojení."); return render(); }
   const prev = it[field === "Stav" && sheet === "Úkoly" ? "state" : field];
   const set = v => { if (sheet === "Úkoly") it.state = v; else it[field] = v; };
-  set(value); render();
+  const quiet = sheet === "Termočlánky";
+  // Termočlánky: nepřekreslovat, jinak by vyplňující přišel o kurzor v dalším poli.
+  const calm = () => { if (!quiet) render(); };
+  set(value); calm();
   try {
     const r = await post({ action: "set", code: auth.code, sheet, key, field, value, name });
     if (!r.ok) {
@@ -1018,7 +1062,7 @@ async function setField(el) {
     }
     DATA.log.push({ at: r.at, who: r.key, name: r.name, sheet, key: String(key), field, value });
     LAST[sheet + "|" + key] = DATA.log[DATA.log.length - 1];
-    render();
+    calm();
     toast(`Uloženo do tabulky: ${field} → ${value}`);
   } catch (e) {
     set(prev); render(); toast("Uložení se nepovedlo, zkontroluj signál.");
