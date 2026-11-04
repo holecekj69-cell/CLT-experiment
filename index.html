@@ -296,6 +296,11 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40;
   background: var(--ink); color: var(--bg); padding: 10px 14px; font-size: 14px; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
 @media (max-width: 560px) { .ck { grid-template-columns: minmax(0, 1fr); } .tg { justify-content: flex-start; } }
+.tip-form{display:grid;gap:12px;max-width:420px;margin:8px 0 16px}
+.tip-form label{display:grid;gap:4px;font-weight:600}
+.tip-form select,.tip-form input{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);min-height:40px}
+.tip-form .btn{justify-self:start}
+.tips .me-row td{font-weight:700}
 </style><script>if ('serviceWorker' in navigator && location.protocol === 'https:') { navigator.serviceWorker.register('sw.js').catch(function () {}); }</script></head><body>
 
 <div class="wrap">
@@ -317,7 +322,7 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
     <div class="row"><span class="lbl">Pohled</span><div class="seg" id="views" role="group" aria-label="Pohled">
       <button type="button" id="v-axis" data-v="axis">Osa</button><button type="button" id="v-list" data-v="list">Seznam</button><button type="button" id="v-tasks" data-v="tasks">Činnosti</button><button type="button" id="v-people" data-v="people">Lidé</button></div></div>
     <div class="row" id="row-check"><span class="lbl">Odškrtávání</span><div class="seg" id="views2" role="group" aria-label="Odškrtávání">
-      <button type="button" id="v-mine" data-v="mine">Moje věci</button><button type="button" id="v-status" data-v="status">Stav úkolů</button><button type="button" id="v-buy" data-v="buy">Nákup</button><button type="button" id="v-gear" data-v="gear">Přístroje</button><button type="button" id="v-open" data-v="open">Otevřené body</button><button type="button" id="v-visits" data-v="visits">Návštěvy</button><button type="button" id="v-tc" data-v="tc">Termočlánky</button><button type="button" id="v-todo" data-v="todo">Nesplněno</button><a class="seg-link" href="podklady.html">Podklady TČ</a></div></div>
+      <button type="button" id="v-mine" data-v="mine">Moje věci</button><button type="button" id="v-status" data-v="status">Stav úkolů</button><button type="button" id="v-buy" data-v="buy">Nákup</button><button type="button" id="v-gear" data-v="gear">Přístroje</button><button type="button" id="v-open" data-v="open">Otevřené body</button><button type="button" id="v-visits" data-v="visits">Návštěvy</button><button type="button" id="v-tc" data-v="tc">Termočlánky</button><button type="button" id="v-todo" data-v="todo">Nesplněno</button><button type="button" id="v-tips" data-v="tips">Tipovačka</button><a class="seg-link" href="podklady.html">Podklady TČ</a></div></div>
     <div class="row"><span class="lbl">Osoba</span><div class="row" id="people" role="group" aria-label="Osoba"></div></div>
   </div>
 
@@ -355,13 +360,15 @@ try { const q = new URLSearchParams(location.search).get("t"); if (q) { const d 
 const nowDate = () => new Date(Date.now() + NOW_OFFSET);
 const p2 = n => String(n).padStart(2, "0");
 const isoDay = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
-const VIEWS = ["axis", "list", "tasks", "people", "mine", "status", "buy", "gear", "open", "visits", "tc", "todo"];
-const CHECK_VIEWS = ["mine", "status", "buy", "gear", "open", "visits", "tc", "todo"];
+const VIEWS = ["axis", "list", "tasks", "people", "mine", "status", "buy", "gear", "open", "visits", "tc", "todo", "tips"];
+const CHECK_VIEWS = ["mine", "status", "buy", "gear", "open", "visits", "tc", "todo", "tips"];
 const SHEET = { status: "Úkoly", buy: "Nákup", gear: "Přístroje", open: "Otevřené body" };
 const GEAR_FIELDS = [["Zkontrolováno / nabito", "Zkontrolováno"], ["Naloženo", "Naloženo"], ["Na místě", "Na místě"], ["Vráceno", "Vráceno"]];
 const TASK_STATES = ["Nezačato", "Rozpracováno", "Hotovo", "Zrušeno"];
 const RESP = ["čeká", "potvrdil", "odmítl"];
 let GUESTS = null, guestJson = "", guestState = "";
+let TIPS = null, tipState = "";
+const TIP_RESULTS = ["Zhasne sám", "Dohoří sám", "Bude se hasit"];
 let P = {}, TY = {}, LAST = {};
 const state = { day: "all", view: "tasks", person: null, sel: null };
 const auth = { code: "", key: "", name: "", admin: false };
@@ -734,6 +741,30 @@ function tcCell(t, f, l, ed) {
   if (!ed) return `<td data-l="${l}">${v ? esc(v) : '<span class="tc-empty">–</span>'}</td>`;
   return `<td data-l="${l}"><input type="text" maxlength="40" inputmode="text" autocomplete="off" aria-label="${esc(l + " " + t.name)}" value="${esc(v)}" data-set="Termočlánky" data-key="${esc(t.n)}" data-name="${esc(t.name)}" data-field="${esc(f)}"></td>`;
 }
+// Tipovačka: každý z týmu jeden tip, do 11:15 vidí jen svůj, pak všechny.
+function viewTips() {
+  let h = `<div class="ck-h"><h2>Tipovačka</h2>${TIPS ? `<span class="sum">tipů ${TIPS.count}</span>` : ""}</div>`;
+  if (!TIPS) return h + `<p class="ro">${tipState === "err" ? "Tipy se nepodařilo načíst. Zkus to znovu se signálem." : "Načítám tipy…"}</p>`;
+  const m = TIPS.mine || {};
+  if (TIPS.open) {
+    h += `<p class="ro">Uzávěrka ve čt 5. 11. v 11:15. Do té doby vidíš jen svůj tip, potom se ukážou všechny. Tip můžeš do uzávěrky měnit.</p>` +
+      `<form id="tip-form" class="tip-form">` +
+      `<label>Výsledek požáru<select name="result" required><option value="">vyber…</option>${TIP_RESULTS.map(r => `<option${m.result === r ? " selected" : ""}>${esc(r)}</option>`).join("")}</select></label>` +
+      `<label>Flashover [min od zapálení]<input name="flash" inputmode="decimal" maxlength="10" placeholder="např. 4,5 nebo nenastane" value="${esc(m.flash || "")}"></label>` +
+      `<label>Max. teplota pod stropem [°C]<input name="tmax" inputmode="numeric" maxlength="5" placeholder="např. 950" value="${esc(m.tmax || "")}"></label>` +
+      `<label>Zapálíme v [čas]<input name="start" type="time" min="08:00" max="18:00" value="${esc(m.start || "")}"></label>` +
+      `<button type="submit" class="btn">${m.at ? "Uložit změnu" : "Uložit tip"}</button>` +
+      `${m.at ? `<span class="ro">Tvůj tip uložen ${esc(fmtAt(m.at))}</span>` : ""}</form>`;
+    return h;
+  }
+  const rows = TIPS.tips || [];
+  h += `<p class="ro">Tipování je uzavřené.</p>`;
+  if (!rows.length) return h + `<p class="ro">Nikdo netipoval.</p>`;
+  return h + `<div class="tc-wrap"><table class="tc tips"><thead><tr><th>Kdo</th><th>Výsledek</th><th>Flashover [min]</th><th>Max. T [°C]</th><th>Zapálení</th></tr></thead><tbody>` +
+    rows.map(t => `<tr${t.key === auth.key ? ' class="me-row"' : ""}><td data-l="Kdo">${esc(t.name || t.key)}</td><td data-l="Výsledek">${esc(t.result)}</td><td data-l="Flashover">${esc(t.flash)}</td><td data-l="Max. T">${esc(t.tmax)}</td><td data-l="Zapálení">${esc(t.start)}</td></tr>`).join("") +
+    `</tbody></table></div>`;
+}
+
 function viewTc() {
   const tc = DATA.tc || [];
   const filled = tc.filter(t => TC_FIELDS.every(([f]) => t[f])).length;
@@ -818,7 +849,7 @@ function viewTodo() {
 function render() {
   if (!canWrite() && CHECK_VIEWS.includes(state.view)) state.view = narrow ? "list" : "axis";
   if (CHECK_VIEWS.includes(state.view)) {
-    const f = { mine: viewMine, status: viewStatus, buy: viewBuy, gear: viewGear, open: viewOpen, visits: viewVisits, tc: viewTc, todo: viewTodo }[state.view];
+    const f = { mine: viewMine, status: viewStatus, buy: viewBuy, gear: viewGear, open: viewOpen, visits: viewVisits, tc: viewTc, todo: viewTodo, tips: viewTips }[state.view];
     document.getElementById("board").innerHTML = f();
     renderControls();
     document.getElementById("plan").hidden = true;
@@ -929,7 +960,7 @@ document.addEventListener("click", e => {
   const d = e.target.closest("[data-d]");
   if (d) { state.day = d.dataset.d; return render(); }
   const v = e.target.closest("[data-v]");
-  if (v) { state.view = v.dataset.v; save(); return render(); }
+  if (v) { state.view = v.dataset.v; save(); render(); if (state.view === "tips" && window.loadTips) window.loadTips(); return; }
   const p = e.target.closest("[data-p]");
   if (p) { state.person = p.dataset.p || null; save(); return render(); }
 });
@@ -998,7 +1029,7 @@ async function refresh() {
     liveState = "off";
   }
   renderLive();
-  if (liveState === "ok") loadGuests();
+  if (liveState === "ok") { loadGuests(); if (state.view === "tips") loadTips(); }
 }
 async function loadGuests() {
   if (!canWrite()) return;
@@ -1013,6 +1044,16 @@ async function loadGuests() {
     if (j !== guestJson) { guestJson = j; GUESTS = JSON.parse(j); if (!document.querySelector("select:focus")) render(); }
   } catch (e) { guestState = "err"; if (!GUESTS && state.view === "visits") render(); }
 }
+async function loadTips() {
+  if (!canWrite()) return;
+  try {
+    const r = await post({ action: "tip_get", code: auth.code });
+    if (!r.ok) { if (r.error === "bad_code") return logout(ERR.bad_code); tipState = "err"; if (!TIPS && state.view === "tips") render(); return; }
+    tipState = "ok"; TIPS = r;
+    if (state.view === "tips" && !document.querySelector("#tip-form :focus")) render();
+  } catch (e) { tipState = "err"; if (!TIPS && state.view === "tips") render(); }
+}
+window.loadTips = loadTips;
 async function post(body) {
   const r = await fetch(CONFIG.api, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
   return r.json();
@@ -1101,6 +1142,21 @@ document.addEventListener("click", e => {
   }
   if (e.target.closest("#code-btn")) { codeForm = true; renderLive(); const i = $("code-in"); if (i) i.focus(); return; }
   if (e.target.closest("#code-cancel")) { codeForm = false; renderLive(); }
+});
+const TIP_ERR = { closed: "Tipování už je uzavřené.", bad_result: "Vyber výsledek požáru.", bad_flash: "Flashover napiš v minutách (např. 4,5) nebo „nenastane“.",
+  bad_tmax: "Teplotu napiš celým číslem 0–1500 °C.", bad_start: "Čas zapálení napiš jako HH:MM." };
+document.addEventListener("submit", async e => {
+  if (e.target.id !== "tip-form") return;
+  e.preventDefault();
+  const f = e.target, btn = f.querySelector("button");
+  const tip = { result: f.result.value, flash: f.flash.value.trim(), tmax: f.tmax.value.trim(), start: f.start.value };
+  if (!tip.result) return toast(TIP_ERR.bad_result);
+  btn.disabled = true;
+  try {
+    const r = await post({ action: "tip_set", code: auth.code, tip });
+    if (!r.ok) { btn.disabled = false; return toast(TIP_ERR[r.error] || ERR[r.error] || "Uložení se nepovedlo."); }
+    TIPS = r; tipState = "ok"; render(); toast("Tip uložen do tabulky.");
+  } catch (err) { btn.disabled = false; toast("Uložení se nepovedlo, zkontroluj signál."); }
 });
 document.addEventListener("submit", e => {
   if (e.target.id !== "code-form") return;
