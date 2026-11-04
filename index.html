@@ -728,7 +728,7 @@ function viewGear() {
         list.map(g => dimIf(gearItem(g), state.person && !gearPeople(g).includes(state.person))).join("") + `</ol>`;
     }).join("");
 }
-const TC_FIELDS = [["Označení na prodlužce", "Prodlužka"], ["Označení na ústředně", "Ústředna"], ["Slot na ústředně", "Slot"]];
+const TC_FIELDS = [["Označení na prodlužce", "Ozn. prodlužky"], ["Prodlužka", "Prodlužka"], ["Číslo redukce", "Redukce"], ["Označení na ústředně", "Ústředna"], ["Slot na ústředně", "Slot"]];
 function tcCell(t, f, l, ed) {
   const v = t[f] || "";
   if (!ed) return `<td data-l="${l}">${v ? esc(v) : '<span class="tc-empty">–</span>'}</td>`;
