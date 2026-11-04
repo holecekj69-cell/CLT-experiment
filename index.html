@@ -301,6 +301,8 @@ h1 { font-size: clamp(40px, 7vw, 68px); font-weight: 700; line-height: 0.95; let
 .tip-form select,.tip-form input{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);min-height:40px}
 .tip-form .btn{justify-self:start}
 .tips .me-row td{font-weight:700}
+.tip-admin{border-top:1px solid var(--line);padding-top:12px;margin-top:20px}
+.tip-btns{display:flex;flex-wrap:wrap;gap:8px}
 </style><script>if ('serviceWorker' in navigator && location.protocol === 'https:') { navigator.serviceWorker.register('sw.js').catch(function () {}); }</script></head><body>
 
 <div class="wrap">
@@ -741,13 +743,23 @@ function tcCell(t, f, l, ed) {
   if (!ed) return `<td data-l="${l}">${v ? esc(v) : '<span class="tc-empty">–</span>'}</td>`;
   return `<td data-l="${l}"><input type="text" maxlength="40" inputmode="text" autocomplete="off" aria-label="${esc(l + " " + t.name)}" value="${esc(v)}" data-set="Termočlánky" data-key="${esc(t.n)}" data-name="${esc(t.name)}" data-field="${esc(f)}"></td>`;
 }
-// Tipovačka: každý z týmu jeden tip, do 11:15 vidí jen svůj, pak všechny.
+// Tipovačka: každý z týmu jeden tip, do uzávěrky vidí jen svůj, pak všechny.
+const tipFmt = iso => { if (!iso) return ""; const d = new Date(iso); return `${d.getDate()}. ${d.getMonth() + 1}. ${d.getHours()}:${p2(d.getMinutes())}`; };
+const tipLocal = iso => { if (!iso) return ""; const d = new Date(iso); return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}T${p2(d.getHours())}:${p2(d.getMinutes())}`; };
+function tipAdmin() {
+  if (!auth.admin || !TIPS) return "";
+  const shown = !TIPS.open;
+  return `<form id="tip-admin" class="tip-form tip-admin"><strong>Správa zveřejnění</strong>` +
+    `<span class="ro">Uzávěrka tipů: ${esc(tipFmt(TIPS.close))} · ${shown ? "výsledky jsou zveřejněné" : "zveřejnění: " + esc(tipFmt(TIPS.reveal))}</span>` +
+    `<label>Zveřejnit výsledky od<input id="tip-reveal" name="at" type="datetime-local" value="${esc(tipLocal(TIPS.reveal))}"></label>` +
+    `<div class="tip-btns"><button type="submit" class="btn">Uložit čas</button><button type="button" class="btn" id="tip-now">Zveřejnit teď</button><button type="button" class="btn" id="tip-reset">Po uzávěrce</button></div></form>`;
+}
 function viewTips() {
   let h = `<div class="ck-h"><h2>Tipovačka</h2>${TIPS ? `<span class="sum">tipů ${TIPS.count}</span>` : ""}</div>`;
   if (!TIPS) return h + `<p class="ro">${tipState === "err" ? "Tipy se nepodařilo načíst. Zkus to znovu se signálem." : "Načítám tipy…"}</p>`;
   const m = TIPS.mine || {};
   if (TIPS.open) {
-    h += `<p class="ro">Uzávěrka ve čt 5. 11. v 11:15. Do té doby vidíš jen svůj tip, potom se ukážou všechny. Tip můžeš do uzávěrky měnit.</p>` +
+    h += `<p class="ro">Uzávěrka ve čt 5. 11. v ${esc(tipFmt(TIPS.close).replace(/^\d+\. \d+\. /, "") || "11:00")}. Do zveřejnění vidíš jen svůj tip, potom se ukážou všechny. Tip můžeš do uzávěrky měnit.</p>` +
       `<form id="tip-form" class="tip-form">` +
       `<label>Výsledek požáru<select name="result" required><option value="">vyber…</option>${TIP_RESULTS.map(r => `<option${m.result === r ? " selected" : ""}>${esc(r)}</option>`).join("")}</select></label>` +
       `<label>Flashover [min od zapálení]<input name="flash" inputmode="decimal" maxlength="10" placeholder="např. 4,5 nebo nenastane" value="${esc(m.flash || "")}"></label>` +
@@ -755,14 +767,14 @@ function viewTips() {
       `<label>Zapálíme v [čas]<input name="start" type="time" min="08:00" max="18:00" value="${esc(m.start || "")}"></label>` +
       `<button type="submit" class="btn">${m.at ? "Uložit změnu" : "Uložit tip"}</button>` +
       `${m.at ? `<span class="ro">Tvůj tip uložen ${esc(fmtAt(m.at))}</span>` : ""}</form>`;
-    return h;
+    return h + tipAdmin();
   }
   const rows = TIPS.tips || [];
   h += `<p class="ro">Tipování je uzavřené.</p>`;
-  if (!rows.length) return h + `<p class="ro">Nikdo netipoval.</p>`;
+  if (!rows.length) return h + `<p class="ro">Nikdo netipoval.</p>` + tipAdmin();
   return h + `<div class="tc-wrap"><table class="tc tips"><thead><tr><th>Kdo</th><th>Výsledek</th><th>Flashover [min]</th><th>Max. T [°C]</th><th>Zapálení</th></tr></thead><tbody>` +
     rows.map(t => `<tr${t.key === auth.key ? ' class="me-row"' : ""}><td data-l="Kdo">${esc(t.name || t.key)}</td><td data-l="Výsledek">${esc(t.result)}</td><td data-l="Flashover">${esc(t.flash)}</td><td data-l="Max. T">${esc(t.tmax)}</td><td data-l="Zapálení">${esc(t.start)}</td></tr>`).join("") +
-    `</tbody></table></div>`;
+    `</tbody></table></div>` + tipAdmin();
 }
 
 function viewTc() {
@@ -1142,6 +1154,24 @@ document.addEventListener("click", e => {
   }
   if (e.target.closest("#code-btn")) { codeForm = true; renderLive(); const i = $("code-in"); if (i) i.focus(); return; }
   if (e.target.closest("#code-cancel")) { codeForm = false; renderLive(); }
+});
+async function tipReveal(at) {
+  try {
+    const r = await post({ action: "tip_reveal", code: auth.code, at });
+    if (!r.ok) return toast(r.error === "not_yours" ? "Zveřejnění může měnit jen správce." : "Uložení se nepovedlo.");
+    TIPS = r; tipState = "ok"; render(); toast(r.open ? `Zveřejnění nastaveno na ${tipFmt(r.reveal)}.` : "Výsledky jsou zveřejněné.");
+  } catch (e) { toast("Uložení se nepovedlo, zkontroluj signál."); }
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("#tip-now")) return tipReveal("now");
+  if (e.target.closest("#tip-reset")) return tipReveal("");
+});
+document.addEventListener("submit", e => {
+  if (e.target.id !== "tip-admin") return;
+  e.preventDefault();
+  const v = $("tip-reveal").value;
+  if (!v) return toast("Vyber datum a čas.");
+  tipReveal(new Date(v).toISOString());
 });
 const TIP_ERR = { closed: "Tipování už je uzavřené.", bad_result: "Vyber výsledek požáru.", bad_flash: "Flashover napiš v minutách (např. 4,5) nebo „nenastane“.",
   bad_tmax: "Teplotu napiš celým číslem 0–1500 °C.", bad_start: "Čas zapálení napiš jako HH:MM." };
